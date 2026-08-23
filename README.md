@@ -1,4 +1,4 @@
-1. Project Overview
+<img width="685" height="500" alt="image" src="https://github.com/user-attachments/assets/175eba65-e84a-4787-a43f-fe4c796a4897" />1. Project Overview
 
 
 Problem Statement
@@ -12,6 +12,15 @@ Curie is a desk robot built on the Arduino UNO Q that addresses specific ADHD ex
 Why Arduino UNO Q?
 
 Curie’s architecture demands two things at once: real-time hardware control at millisecond granularity for servo animation, touch response, and OLED rendering — and a full Linux environment capable of running Python, driving a USB camera, and calling cloud APIs. The Arduino UNO Q is uniquely built for this. It houses a Qualcomm QRB2210 quad-core Cortex-A53 at 2 GHz running Debian Linux, paired with an STM32U585 Cortex-M33 MCU at 160 MHz running Zephyr RTOS, connected through an internal bridge. The Linux side runs the entire application layer — LLM integration, speech-to-text, text-to-speech, the web dashboard, and the SQLite memory database. The MCU side handles the latency-sensitive hardware loop: the RoboEyes animation state machine, servo kinematics with eased interpolation, touch polling, and the OLED frame buffer, all at consistent frame rates without being interrupted by the heavier AI workloads. The onboard dual ISP and GPU handle the camera-based person and phone detection entirely on-device, so no video frames leave the board — this was a privacy-first choice, since Curie is watching you at your desk all day. Conversational AI, on the other hand, goes to Groq’s cloud inference because the quality of dialogue, emotion-tagged responses, and task decomposition that an ADHD user benefits from requires a large language model far beyond what the QRB2210’s CPU/GPU can run at usable speed. We accepted this cloud dependency as a reasonable trade-off: the sensitive data (video) stays local, and the non-sensitive data (text queries) goes to the cloud for quality. Built-in Wi-Fi and Bluetooth mean no additional networking hardware, and the UNO form factor keeps the footprint small enough to sit on a desk without feeling like a development board 
+
+<img width="441" height="328" alt="image" src="https://github.com/user-attachments/assets/689e49b6-e9f5-4f45-bdcc-da5daa19f517" />
+
+<img width="433" height="321" alt="image" src="https://github.com/user-attachments/assets/6d9a9902-96fd-45f9-9ea0-83ba21f1e0af" />
+
+<img width="412" height="307" alt="image" src="https://github.com/user-attachments/assets/cfb95e68-4168-4ba9-ac88-a94e3648266f" />
+
+![Uploading image.png…]()
+
 
 2. Components Used (BOM)
 
@@ -46,3 +55,6 @@ SSD1306 OLED (128×64) SDA / SCL (I2C)
 USB-A Webcam (with mic) USB A port
 Wired Speaker USB A + aux (3.5mm) port
 
+<img width="685" height="500" alt="image" src="https://github.com/user-attachments/assets/109e3746-3e93-47e1-84f5-204f606c8257" />
+
+<img width="833" height="440" alt="image" src="https://github.com/user-attachments/assets/d16dcbb8-fee7-43f7-a20f-5e6387af1af1" />
