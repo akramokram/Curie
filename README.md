@@ -1,6 +1,3 @@
-<img width="685" height="500" alt="image" src="https://github.com/user-attachments/assets/175eba65-e84a-4787-a43f-fe4c796a4897" />1. Project Overview
-
-
 Problem Statement
 
 ADHD comes with a predictable set of daily struggles: starting a task feels like pushing a boulder, staying on it is a constant battle against distraction, and time itself seems to blur and slip away. Under the surface, these are executive-function challenges — task paralysis, poor sustained attention, time blindness, emotional dysregulation, and a tendency to hyperfocus for so long that you forget to drink water or stand up. Over 200 million adults deal with this globally, and the tools meant to help are almost all app-based timers and focus assistants that live on the very screens most likely to pull your attention away in the first place. There are, however, real techniques that work — body doubling (having someone nearby so you feel accountable), task breakdown (splitting an overwhelming task into tiny steps), structured time-blocking, external cueing (physical reminders outside your own head), sensory grounding, and habit tracking with progressive goals. These are well-documented in clinical literature but almost never delivered through a single physical system. Curie is that system — a desk companion that combines all of these approaches into one device: it sits with you like a body double, breaks tasks down on voice command, runs scored focus sessions, gives you something tactile to touch when you need to reground, guides breathing exercises, tracks your habits with streak-based goals, and nudges you to move or hydrate when it senses you’ve been sitting too long.
@@ -19,7 +16,7 @@ Curie’s architecture demands two things at once: real-time hardware control at
 
 <img width="412" height="307" alt="image" src="https://github.com/user-attachments/assets/cfb95e68-4168-4ba9-ac88-a94e3648266f" />
 
-![Uploading image.png…]()
+<img width="415" height="306" alt="image" src="https://github.com/user-attachments/assets/66f28f05-983f-4c97-8d08-43c047b9a778" />
 
 
 2. Components Used (BOM)
