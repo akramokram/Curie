@@ -126,6 +126,8 @@ Instead of switching apps and breaking focus, the user can simply tell Curie.
 
 ## ⏱️ Pomodoro / Focus Sessions
 
+<img width="8192" height="6144" alt="IMG_20260823_224825910" src="https://github.com/user-attachments/assets/bd634aea-69e2-432f-b001-9c3be70057a1" />
+
 Curie includes an integrated focus timer with:
 
 * Work sessions
@@ -139,9 +141,13 @@ Curie includes an integrated focus timer with:
 
 The physical OLED can display the focus state and final session score, including a small confetti animation after completion.
 
+<img width="1600" height="1200" alt="WhatsApp Image 2026-08-23 at 11 25 05 PM" src="https://github.com/user-attachments/assets/a5c3345b-48c1-4003-bef8-0fe1bead24dd" />
+
 ---
 
 ## 🌬️ Breathing Exercise
+
+<img width="1600" height="1200" alt="WhatsApp Image 2026-08-23 at 11 25 05 PM (3)" src="https://github.com/user-attachments/assets/921c950b-9a73-4468-a9bc-b7edb6df5005" />
 
 Curie can guide the user through a timed breathing exercise.
 
@@ -217,6 +223,8 @@ Curie can:
 ---
 
 ## 🫳 Physical Interaction
+
+<img width="1599" height="1199" alt="WhatsApp Image 2026-08-23 at 11 25 05 PM (1)" src="https://github.com/user-attachments/assets/acc435b0-8e2d-4118-b19b-03419e4b5561" />
 
 Curie includes touch inputs for physical interaction.
 
