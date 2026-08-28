@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curie</title>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Crect x='10' y='14' width='10' height='14' rx='3' fill='%231a1a1e'/%3E%3Crect x='7' y='2' width='16' height='12' rx='4' fill='%231a1a1e'/%3E%3Ccircle cx='12' cy='8' r='1.8' fill='%23000'/%3E%3Ccircle cx='18' cy='8' r='1.8' fill='%23000'/%3E%3Ccircle cx='12' cy='8' r='0.9' fill='%235fb8ff'/%3E%3Ccircle cx='18' cy='8' r='0.9' fill='%235fb8ff'/%3E%3C/svg%3E">
+<meta name="description" content="Curie is a screen-free desk companion that helps neurodivergent users start, stay, and return to focus — without shame. Built on Arduino UNO Q.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Curie — A Screen-Free Focus Companion">
+<meta property="og:description" content="A desk robot that notices when you drift and gently helps you come back. Pomodoro timer, live presence detection, and an on-device AI coach — built on Arduino UNO Q.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Curie — A Screen-Free Focus Companion">
+<meta name="twitter:description" content="A desk robot that notices when you drift and gently helps you come back, built on Arduino UNO Q.">
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  (function(){
+    var saved = localStorage.getItem("ui_theme") || "dark";
+    document.documentElement.setAttribute("data-theme", saved);
+  })();
+</script>
+<style>
+  :root[data-theme="dark"] {
+    --bg: #0a0a0c;
+    --card: #111114;
+    --card-glass: rgba(22, 22, 26, 0.62);
+    --card-2: #16161a;
+    --card-2-glass: rgba(26, 26, 31, 0.55);
+    --border: #1c1c20;
+    --border-strong: #2a2a30;
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --text-primary: #eaf1fb;
+    --text-secondary: #c9cdd3;
+    --text-muted: #8a8e95;
+    --accent: #5fb8ff;
+    --accent-text: #04121f;
+    --accent-bg: #0c2338;
+    --accent-border: #1c4d70;
+    --danger: #ff8a8a;
+    --danger-border: #6e2b2b;
+    --success: #4ade80;
+    --warning: #ffc75f;
+    --notif-timer: #ff8fc7;
+    --radius-sm: 10px;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.18);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+    --glow-1: rgba(95, 184, 255, 0.26);
+    --glow-2: rgba(160, 120, 255, 0.22);
+    --scrollbar-thumb: #35353c;
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  :root[data-theme="light"] {
+    --bg: #f7f5f2;
+    --card: #ffffff;
+    --card-glass: rgba(255, 255, 255, 0.68);
+    --card-2: #fbfaf8;
+    --card-2-glass: rgba(251, 250, 248, 0.6);
+    --border: #eae6e0;
+    --border-strong: #ddd4c8;
+    --border-glass: rgba(0, 0, 0, 0.06);
+    --text-primary: #2e2c29;
+    --text-secondary: #5b5850;
+    --text-muted: #736e64;
+    --accent: #3d68a8;
+    --accent-text: #ffffff;
+    --accent-bg: #e5edf9;
+    --accent-border: #c7d9ef;
+    --danger: #b23f3f;
+    --danger-border: #e6c9c9;
+    --success: #2f9e5e;
+    --warning: #b9812f;
+    --notif-timer: #b23f8f;
+    --radius-sm: 12px;
+    --radius: 16px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12);
+    --glow-1: rgba(61, 104, 168, 0.15);
+    --glow-2: rgba(160, 120, 255, 0.13);
+    --scrollbar-thumb: #ddd4c8;
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+  [tabindex]:focus-visible, .theme-switch:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  input[type="checkbox"]:focus-visible + .switch {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  * { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  body::before, body::after {
+    content: ''; position: fixed; border-radius: 50%; z-index: -1; pointer-events: none;
+  }
+  body::before {
+    top: -12%; left: -8%; width: 55%; height: 55%;
+    background: radial-gradient(circle, var(--glow-1), transparent 70%); filter: blur(70px);
+  }
+  body::after {
+    bottom: -15%; right: -10%; width: 50%; height: 50%;
+    background: radial-gradient(circle, var(--glow-2), transparent 70%); filter: blur(80px);
+  }
+
+  .app {
+    max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px;
+    position: relative; z-index: 1; display: flex; flex-direction: column; gap: 22px;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; row-gap: 10px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; row-gap: 8px; }
+  .brand svg { transition: transform 0.3s ease; }
+  .brand:hover svg { transform: scale(1.05); }
+  .brand-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; font-family: var(--font-display); }
+
+  .status-badge {
+    display: inline-flex; align-items: center; background: var(--accent-bg); color: var(--accent);
+    font-size: 11px; font-weight: 700; padding: 5px 14px 5px 10px; border-radius: 999px;
+    border: 1px solid var(--accent-border); text-transform: uppercase; letter-spacing: 0.5px;
+    transition: var(--transition);
+  }
+  .status-badge:hover { box-shadow: 0 0 14px var(--glow-1); }
+  .status-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--success);
+    margin-right: 7px; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); animation: pulse-dot 2s infinite; flex-shrink: 0;
+  }
+  .status-dot.thinking { background: var(--warning); animation: pulse-dot-amber 1s infinite; }
+  .status-dot.offline { background: var(--text-muted); animation: none; box-shadow: none; }
+  @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); } 70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
+  @keyframes pulse-dot-amber { 0% { box-shadow: 0 0 0 0 rgba(255, 199, 95, 0.6); } 70% { box-shadow: 0 0 0 6px rgba(255, 199, 95, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 199, 95, 0); } }
+
+  .poweredby-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    padding: 5px 12px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--card-2-glass);
+  }
+  .poweredby-pill svg { flex-shrink: 0; opacity: 0.75; color: var(--accent); }
+
+  .theme-switch { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .theme-switch:hover { opacity: 0.8; }
+  .switch {
+    width: 44px; height: 24px; border-radius: 24px; background: var(--border-strong); position: relative;
+    transition: var(--transition); flex-shrink: 0; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  .switch.on { background: var(--accent-bg); border: 1px solid var(--accent-border); box-shadow: inset 0 0 8px rgba(95, 184, 255, 0.1); }
+  .switch .thumb {
+    width: 18px; height: 18px; border-radius: 50%; background: var(--text-muted); position: absolute;
+    top: 3px; left: 3px; transition: var(--transition); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  .switch.on .thumb { transform: translateX(20px); background: var(--accent); box-shadow: 0 2px 4px rgba(95, 184, 255, 0.3); }
+
+  .hero-intro { max-width: 720px; }
+  .hero-tagline {
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.22; letter-spacing: -0.3px; margin: 0 0 8px;
+  }
+  .hero-tagline-sub { font-size: 14.5px; color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 60ch; }
+
+  .curie-screen {
+    position: relative;
+    background: radial-gradient(120% 140% at 50% -10%, #182430 0%, #0a0f14 62%, #05070a 100%);
+    border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.07);
+    aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; box-shadow: inset 0 0 40px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.22);
+    flex: 0 0 auto;
+  }
+  .curie-screen::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
+  }
+  .curie-face-icon-badge { position: absolute; top: 10px; right: 12px; font-size: 15px; opacity: 0.85; z-index: 20;}
+  .curie-floor-glow {
+    position: absolute; bottom: 14%; left: 50%; transform: translateX(-50%);
+    width: 55%; height: 40px; border-radius: 50%;
+    background: radial-gradient(ellipse at center, var(--glow-1), transparent 70%);
+    filter: blur(18px); opacity: 0.6; pointer-events: none;
+  }
+  .curie-screen.timer-active .curie-telemetry { display: none; }
+  .curie-telemetry {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 7px; z-index: 20;
+    font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.5px;
+    color: rgba(234,241,251,0.45); text-transform: uppercase;
+  }
+  .telemetry-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); animation: pulse-dot 2s infinite; }
+  .curie-wake-bar { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 25; }
+
+  .hero-face-card { display: flex; flex-direction: column; }
+  .curie-face { display: flex; gap: 34px; align-items: center; justify-content: center; position: absolute; inset: 0; z-index: 2; }
+  
+  /* OVERLAYS FOR DIGITAL TWIN */
+  .digital-twin-overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 10;
+    opacity: 0; transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none;
+  }
+  .activity-pomodoro .pomodoro-display { opacity: 1; }
+  .activity-breathing .breathing-display { opacity: 1; }
+  .activity-score .score-display { opacity: 1; }
+
+  .activity-breathing .eye-wrap,
+  .activity-score .eye-wrap,
+  .activity-breathing .zzz-float,
+  .activity-score .zzz-float {
+    opacity: 0 !important;
+  }
+
+  .digital-twin-overlay.pomodoro-display {
+    justify-content: flex-end;
+    padding-bottom: 6px;
+    z-index: 12;
+  }
+  .pomodoro-label { display:none; }
+  .pomodoro-time { font-size: 12px; font-weight: 700; font-family: ui-monospace, monospace; line-height: 1; color: var(--text-primary); text-shadow: 0 1px 5px rgba(0,0,0,0.9); letter-spacing: 0.5px; }
+  .pomodoro-streak { position: absolute; top: 12px; left: 16px; font-size: 14px; font-weight: 700; color: #ff9d4d; display: flex; align-items: center; gap: 4px; }
+  
+  /* Pomodoro Progress Bar CSS */
+  .pomodoro-progress-track {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 6px;
+    background: rgba(255,255,255,0.05);
+  }
+  .pomodoro-progress-fill {
+    height: 100%; background: var(--accent);
+    width: 0%; transition: width 1s linear;
+  }
+
+  /* Task Breakdown Banner CSS */
+  .task-banner {
+    background: var(--accent-bg); border: 1px solid var(--accent-border);
+    border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px;
+    display: none; align-items: center; justify-content: space-between;
+    animation: fadeIn 0.3s ease;
+  }
+  .task-banner.show { display: flex; gap: 12px; flex-wrap: wrap;}
+  .task-banner-text { font-size: 14px; color: var(--text-primary); font-weight: 600; }
+  .task-banner-sub { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+
+  /* Breathing Overlays */
+  .breathing-bars { display: flex; gap: 24px; align-items: center; justify-content: center; height: 70px; margin-bottom: 16px; }
+  .b-bar { width: 38px; height: 12px; background: var(--accent); border-radius: 20px; box-shadow: 0 0 24px var(--glow-1); transition: height 0.05s linear; }
+  .breathing-time { font-size: 13px; font-weight: 700; color: rgba(234,241,251,0.6); font-family: ui-monospace, monospace; letter-spacing: 1px; }
+  .digital-twin-overlay.breathing-display { justify-content: flex-end; padding-bottom: 6px; z-index: 12; }
+
+  /* Score Overlays */
+  .score-label { font-size: 14px; font-weight: 700; letter-spacing: 3px; color: var(--success); margin-bottom: 8px; text-shadow: 0 0 15px rgba(74,222,128,0.3); }
+  .score-val { font-size: 64px; font-weight: 800; color: var(--text-primary); font-family: var(--font-display); line-height: 1; }
+
+  /* Look Directions */
+  .activity-look-left .eye-wrap { transform: translateX(-18px); }
+  .activity-look-right .eye-wrap { transform: translateX(18px); }
+  .activity-look-up .eye-wrap { transform: translateY(-18px); }
+  .activity-look-down .eye-wrap { transform: translateY(18px); }
+
+  /* Standard Eyes */
+  .eye-wrap {
+    position: relative; width: 58px; height: 58px; border-radius: 14px; overflow: hidden;
+    transition: height 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1), border-radius 0.28s ease, opacity 0.3s ease, transform 0.3s ease;
+  }
+  .eye {
+    position: absolute; inset: 0; background: var(--accent);
+    box-shadow: 0 0 20px rgba(95,184,255,0.35);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+  .eyelid {
+    position: absolute; left: -30%; width: 160%; height: 65%;
+    background: #0b0f14; transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  }
+  .eyelid-top { top: -42%; transform: translateY(-100%) rotate(0deg); }
+  .eyelid-bottom { bottom: -42%; transform: translateY(100%) rotate(0deg); }
+
+  @keyframes blinkCycle { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.08); } }
+  .curie-face:not(.activity-asleep):not(.activity-sleeping):not(.activity-offline):not(.activity-pomodoro):not(.activity-breathing):not(.activity-score) .eye-wrap {
+    animation: blinkCycle 5.5s ease-in-out infinite;
+  }
+
+  .mood-happy .eye, .mood-laugh .eye { box-shadow: 0 0 20px var(--glow-1); }
+  .mood-happy .eye-left .eyelid-bottom  { transform: translateY(30%) rotate(-16deg); }
+  .mood-happy .eye-right .eyelid-bottom { transform: translateY(30%) rotate(16deg); }
+  .mood-tired .eye-left .eyelid-top  { transform: translateY(-30%) rotate(12deg); }
+  .mood-tired .eye-right .eyelid-top { transform: translateY(-30%) rotate(-12deg); }
+  .mood-angry .eye { box-shadow: 0 0 18px var(--glow-1); }
+  .mood-angry .eye-left .eyelid-top  { transform: translateY(-30%) rotate(-16deg); }
+  .mood-angry .eye-right .eyelid-top { transform: translateY(-30%) rotate(16deg); }
+  .mood-laugh .eye-left .eyelid-bottom  { transform: translateY(32%) rotate(-16deg); }
+  .mood-laugh .eye-right .eyelid-bottom { transform: translateY(32%) rotate(16deg); }
+  .mood-laugh .eye-wrap { animation: eyeHappyPulse 0.4s ease-in-out 2; }
+  @keyframes eyeHappyPulse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+  @keyframes confusedShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  .mood-confused .eye-wrap { animation: confusedShake 0.5s ease-in-out 2; }
+
+  .activity-listening .eye-wrap { height: 70px; }
+  .activity-listening .eye { box-shadow: 0 0 28px rgba(95,184,255,0.5); }
+  .activity-thinking .eye { animation: eyeThink 1s ease-in-out infinite; }
+  @keyframes eyeThink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+  .activity-asleep .eye-wrap { height: 6px; border-radius: 6px; }
+  .activity-asleep .eye { opacity: 0.55; box-shadow: none; }
+  .activity-sleeping .eye-wrap { opacity: 0; }
+  .activity-dancing .eye-wrap { animation: eyeBounce 0.45s ease-in-out infinite alternate; }
+  .activity-dancing .eye-left .eyelid-bottom  { transform: translateY(30%) rotate(-16deg); }
+  .activity-dancing .eye-right .eyelid-bottom { transform: translateY(30%) rotate(16deg); }
+  @keyframes eyeBounce { from { transform: translateY(0); } to { transform: translateY(-7px); } }
+  .activity-offline .eye-wrap { height: 4px; border-radius: 4px; }
+  .activity-offline .eye { opacity: 0.4; background: var(--text-muted); box-shadow: none; }
+
+  .zzz-float {
+    position: absolute; right: 22%; bottom: 60%; font-family: var(--font-display); font-weight: 700;
+    font-size: 13px; color: #8ba9c9; opacity: 0; z-index: 2;
+  }
+  .zzz-float.z2 { right: 14%; font-size: 17px; }
+  .activity-asleep .zzz-float.z1 { animation: zzzRise 3s ease-in infinite; }
+  .activity-asleep .zzz-float.z2 { animation: zzzRise 3s ease-in infinite 1.2s; }
+  @keyframes zzzRise { 0% { opacity: 0; transform: translateY(0) scale(0.8); } 30% { opacity: 0.85; } 100% { opacity: 0; transform: translateY(-26px) scale(1.1); } }
+
+  .vision-panel-media {
+    position: relative; border-radius: var(--radius); overflow: hidden; background: #000;
+    aspect-ratio: 4 / 3; border: 1px solid var(--border); width: 100%; margin: 0 auto;
+  }
+  .vision-panel-media iframe { width: 100%; height: 100%; border: none; display: block; }
+  .vision-corner { position: absolute; width: 18px; height: 18px; border-color: var(--accent); opacity: 0.85; pointer-events: none; }
+  .vision-corner.tl { top: 8px; left: 8px; border-top: 2px solid; border-left: 2px solid; border-radius: 4px 0 0 0; }
+  .vision-corner.tr { top: 8px; right: 8px; border-top: 2px solid; border-right: 2px solid; border-radius: 0 4px 0 0; }
+  .vision-corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid; border-left: 2px solid; border-radius: 0 0 0 4px; }
+  .vision-corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid; border-right: 2px solid; border-radius: 0 0 4px 0; }
+
+  .vision-live-pill {
+    position: absolute; top: 10px; left: 10px; display: none; align-items: center; gap: 6px;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); color: #fff; font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .vision-live-pill.show { display: inline-flex; }
+  .vision-live-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #ff5c5c; animation: pulse-dot 1.4s infinite; }
+
+  .vision-placeholder {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; color: rgba(255,255,255,0.55);
+    background: radial-gradient(circle at 50% 40%, rgba(95,184,255,0.1), transparent 70%);
+    text-align: center; padding: 16px; transition: opacity 0.4s ease;
+  }
+  .vision-placeholder.hide { opacity: 0; pointer-events: none; }
+  .vision-placeholder span { font-size: 12.5px; max-width: 230px; line-height: 1.5; }
+  .vision-scan-line {
+    position: absolute; left: 6%; right: 6%; height: 2px; top: 15%;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanMove 2.6s ease-in-out infinite; opacity: 0.55; pointer-events: none;
+  }
+  @keyframes scanMove { 0% { top: 15%; } 50% { top: 85%; } 100% { top: 15%; } }
+
+  .vision-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+  .vision-stat { background: var(--card-2-glass); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .vision-stat-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px; }
+  .vision-stat-value { font-size: 14.5px; font-weight: 700; color: var(--text-primary); }
+  .vision-caption { font-size: 12px; color: var(--text-muted); margin-top: 12px; line-height: 1.55; }
+
+  /* COMBINED MAIN GRID */
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .grid-left { display: flex; flex-direction: column; gap: 18px; }
+  .grid-right { display: flex; flex-direction: column; gap: 18px; }
+
+  .card {
+    background: var(--card-glass);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.03);
+    transition: var(--transition);
+    position: relative;
+  }
+  .card:hover {
+    border-color: rgba(95, 184, 255, 0.35);
+    box-shadow: var(--shadow-md), 0 0 0 1px rgba(95, 184, 255, 0.08);
+    transform: translateY(-3px);
+  }
+
+  .card-header { margin-bottom: 16px; }
+  .card-title-row { display: flex; align-items: center; gap: 9px; }
+  .card-icon { font-size: 16px; line-height: 1; filter: saturate(1.1); }
+  .card h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; }
+  .card-subtitle { font-size: 12px; color: var(--text-muted); margin: 4px 0 0 25px; }
+
+  .streak-main { display:flex; align-items:center; gap:16px; margin-bottom:14px; }
+  .streak-flame { font-size:38px; line-height:1; opacity:0.35; filter: drop-shadow(0 0 8px rgba(255,140,60,0.35)); transition: var(--transition); }
+  .streak-flame.pulse { animation: streakPulse 1.6s ease-in-out infinite; }
+  @keyframes streakPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  .streak-count-block { display:flex; flex-direction:column; }
+  .streak-count { font-size:28px; font-weight:800; line-height:1; color: var(--text-primary); font-family: var(--font-display); }
+  .streak-count-label { font-size:11px; color: var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+  .streak-best { margin-left:auto; text-align:right; padding-left:14px; border-left:1px solid var(--border); }
+  .streak-best-num { font-size:18px; font-weight:700; color: var(--accent); font-family: var(--font-display); }
+  .streak-best-label { font-size:10.5px; color: var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+  .streak-dots { display:flex; gap:6px; margin-bottom:4px; }
+  .streak-dot { width:100%; height:16px; border-radius:5px; background: var(--card-2); border:1px solid var(--border); flex:1; transition: var(--transition); }
+  .streak-dot.filled { background: linear-gradient(135deg, #ff9d4d, #ff6a3d); border-color: #ff6a3d; box-shadow: 0 2px 6px rgba(255,106,61,0.35); }
+  .streak-dot.today { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .streak-risk-msg { font-size:12.5px; color: var(--warning); background: rgba(255,199,95,0.08); border:1px solid var(--accent-border); border-radius: var(--radius-sm); padding:10px 12px; margin-top:10px; }
+
+  .chat-card { padding: 20px; }
+  .chat-card-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .chat-card-header:hover .card-title-row h2 { color: var(--accent); }
+  .chat-card-header .chevron { color: var(--accent); font-size: 12px; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+  .chat-card-header .chevron.collapsed { transform: rotate(-90deg); }
+  .chat-card-body {
+    max-height: 640px; opacity: 1; overflow: hidden; margin-top: 16px;
+    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, margin-top 0.3s ease;
+  }
+  .chat-card-body.collapsed { max-height: 0; opacity: 0; margin-top: 0; }
+
+  .chat-box {
+    height: 280px; overflow-y: auto; background: var(--card-2-glass); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.12); scroll-behavior: smooth;
+  }
+  .msg {
+    max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5;
+    word-wrap: break-word; animation: slideIn 0.35s cubic-bezier(0.25,0.8,0.4,1);
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.user { align-self: flex-end; background: var(--accent); color: var(--accent-text); border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(95, 184, 255, 0.2); }
+  .msg.curie { align-self: flex-start; background: var(--border); color: var(--text-primary); border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
+
+  .row { display: flex; gap: 10px; }
+  input[type="text"] {
+    width: 100%; background: var(--card-2); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    padding: 11px 14px; color: var(--text-primary); font-size: 14px; height: 42px; transition: var(--transition);
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(95, 184, 255, 0.1); background: var(--card); }
+
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 24px; background: transparent; margin: 0; padding: 0; display: block; }
+  input[type="range"]:focus { outline: none; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; background: var(--border-strong); border-radius: 3px; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent);
+    cursor: pointer; box-shadow: 0 2px 4px rgba(95, 184, 255, 0.3); transition: var(--transition); margin-top: -6px;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); box-shadow: 0 4px 8px rgba(95, 184, 255, 0.4); }
+  input[type="range"]::-moz-range-track { height: 6px; background: var(--border-strong); border-radius: 3px; }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: none;
+    cursor: pointer; box-shadow: 0 2px 4px rgba(95, 184, 255, 0.3); transition: var(--transition);
+  }
+  input[type="range"]::-moz-range-thumb:hover { transform: scale(1.15); }
+  input[type="range"]::-moz-range-progress { height: 6px; background: var(--accent); border-radius: 3px; }
+
+  button { font-family: inherit; cursor: pointer; }
+  .btn {
+    position: relative; overflow: hidden; border-radius: var(--radius-sm); padding: 0 18px; height: 42px; font-size: 14px; font-weight: 600;
+    border: 1px solid var(--border-strong); color: var(--text-primary); background: var(--card-2); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  }
+  .btn::before {
+    content: ''; position: absolute; top: 0; left: -75%; width: 45%; height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent); transform: skewX(-20deg);
+    transition: left 0.7s cubic-bezier(0.4,0,0.2,1); pointer-events: none;
+  }
+  .btn:hover::before { left: 130%; }
+  .btn:hover { border-color: var(--accent); background: var(--card-2); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16); transform: translateY(-2px) scale(1.015); }
+  .btn:active { transform: translateY(0) scale(0.97); box-shadow: inset 0 2px 5px rgba(0,0,0,0.18); }
+  .btn-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); box-shadow: 0 4px 14px rgba(0,0,0,0.28); }
+  .btn-primary:hover { background: var(--accent); box-shadow: 0 8px 22px rgba(0,0,0,0.34); }
+  .btn-danger { border-color: var(--danger-border); color: var(--danger); }
+  .btn-danger:hover { background: rgba(255, 138, 138, 0.1); border-color: var(--danger); }
+  .btn-block { width: 100%; }
+  .btn-sm { height: 36px; padding: 0 14px; font-size: 13px; }
+  .btn-grid { display: grid; gap: 10px; }
+  .btn-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .btn-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .btn-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .btn:disabled::before { display: none; }
+
+  .field { margin-bottom: 16px; position: relative; }
+  .field label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600; }
+
+  select {
+    -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 100%; height: 42px; padding: 0 38px 0 14px;
+    background-color: var(--card-2);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8e95' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
+    color: var(--text-primary); border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm);
+    font-size: 14px; font-family: inherit; cursor: pointer; transition: var(--transition);
+  }
+  select:hover { border-color: var(--accent); }
+  select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(95, 184, 255, 0.18); }
+  select option { background: var(--card); color: var(--text-primary); }
+
+  .hidden-select { display: none !important; }
+  .custom-select { position: relative; }
+  .custom-select-trigger {
+    -webkit-appearance: none; -moz-appearance: none; appearance: none; margin: 0; width: 100%; height: 42px;
+    background: var(--card-2); border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm); padding: 0 14px;
+    display: flex; align-items: center; justify-content: space-between; color: var(--text-primary); font-size: 14px; font-family: inherit; cursor: pointer; transition: var(--transition);
+  }
+  .custom-select-trigger:hover { border-color: var(--accent); }
+  .custom-select-trigger.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(95, 184, 255, 0.18); }
+  @keyframes triggerConfirm { 0% { box-shadow: 0 0 0 0 rgba(95, 184, 255, 0.45); } 100% { box-shadow: 0 0 0 9px rgba(95, 184, 255, 0); } }
+  .custom-select-trigger.confirmed { animation: triggerConfirm 0.5s ease-out; }
+  .cs-chevron { transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); color: var(--text-muted); font-size: 11px; margin-left: 8px; }
+  .custom-select-trigger.active .cs-chevron { transform: rotate(180deg); color: var(--accent); }
+  .custom-select-panel {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--card); border: 1.5px solid var(--accent-border);
+    border-radius: var(--radius-sm); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(95, 184, 255, 0.1);
+    overflow: hidden; max-height: 0; opacity: 0; transform: translateY(-10px) scaleY(0.95); transform-origin: top;
+    transition: max-height: 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease, transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    z-index: 60; pointer-events: none;
+  }
+  .custom-select-panel.open { max-height: 280px; opacity: 1; transform: translateY(0) scaleY(1); pointer-events: auto; overflow-y: auto; }
+  .cs-option { position: relative; padding: 10px 14px 10px 30px; font-size: 14px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+  .cs-option:hover, .cs-option.active { background: var(--card-2); }
+  .cs-option.selected { color: var(--accent); font-weight: 700; background: var(--accent-bg); }
+  .cs-option.selected::before { content: ''; position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between; background: var(--card-2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 10px;
+    transition: var(--transition); cursor: pointer;
+  }
+  .toggle-row:hover { border-color: var(--accent-border); background: var(--card); }
+  .toggle-row span { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+
+  .cal-event-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding: 12px 0; transition: background 0.2s ease; }
+  .cal-event-row:hover { background: rgba(95, 184, 255, 0.03); }
+  .cal-event-row:last-child { border-bottom: none; }
+  .cal-event-time { color: var(--accent); font-weight: 700; min-width: 80px; font-size: 13px; }
+  .cal-event-summary { font-size: 14px; font-weight: 500; }
+  .cal-event-row input[type="checkbox"] {
+    -webkit-appearance: none; appearance: none; width: 20px; height: 20px; flex-shrink: 0;
+    border-radius: 6px; border: 2px solid var(--border-strong); background: var(--card-2); cursor: pointer; position: relative;
+    transition: var(--transition);
+  }
+  .cal-event-row input[type="checkbox"]:hover { border-color: var(--accent-border); }
+  .cal-event-row input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); box-shadow: 0 2px 6px rgba(95, 184, 255, 0.35); }
+  .cal-event-row input[type="checkbox"]:checked::after {
+    content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid var(--accent-text);
+    border-width: 0 2px 2px 0; transform: rotate(45deg); animation: checkPop 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes checkPop { from { transform: rotate(45deg) scale(0); opacity: 0; } to { transform: rotate(45deg) scale(1); opacity: 1; } }
+
+  .log-box {
+    height: 140px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px; background: var(--card-2-glass); color: var(--text-secondary); font-family: ui-monospace, monospace;
+    font-size: 12px; line-height: 1.6; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .log-box > div { animation: fadeIn 0.3s ease; }
+  .memory-box {
+    min-height: 70px; max-height: 110px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px; background: var(--card-2-glass); color: var(--accent); font-style: italic; font-size: 13px;
+    box-shadow: inset 0 1px 3px rgba(95, 184, 255, 0.05);
+  }
+  .memory-box-wrap { position: relative; }
+  .memory-clear-btn { position: absolute; top: 8px; right: 8px; z-index: 2; padding: 4px 8px; font-size: 10px; border-radius: 7px; background: var(--card); border: 1px solid var(--border-strong); color: var(--text-muted); cursor: pointer; }
+  .memory-clear-btn:hover { color: var(--danger); border-color: var(--danger-border); }
+
+
+  .habit-bars { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+  .habit-bar-label { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; }
+  .habit-bar-label b { color: var(--text-primary); font-weight: 700; }
+  .habit-bar-track { height: 9px; background: var(--card-2); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); box-shadow: inset 0 1px 2px rgba(0,0,0,0.08); }
+  .habit-bar-fill { height: 100%; border-radius: 6px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); background: linear-gradient(90deg, var(--accent), #8fd3ff); }
+  .habit-bar-fill.warn { background: linear-gradient(90deg, var(--warning), #ffdca0); }
+  .habit-history { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px; }
+  .habit-history-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 8px; }
+
+  .action-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--card-2-glass); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; transition: var(--transition);
+  }
+  .action-item:last-child { margin-bottom: 0; }
+  .action-item:hover { border-color: var(--accent-border); transform: translateX(2px); }
+  .action-item-info { display: flex; align-items: center; gap: 12px; }
+  .action-item-icon { font-size: 22px; line-height: 1; }
+  .action-item-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+  .action-item-desc { font-size: 12px; color: var(--text-muted); }
+  .action-item-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; z-index: 1000; padding: 16px; animation: overlayFade 0.2s ease;
+  }
+  @keyframes overlayFade { from { opacity: 0; } to { opacity: 1; } }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card-glass); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-radius: var(--radius-lg); padding: 28px; max-width: 380px; width: 100%; text-align: center;
+    border: 1px solid var(--border-glass); box-shadow: var(--shadow-lg); animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .modal h1 { margin: 0 0 10px; font-size: 21px; font-weight: 700; font-family: var(--font-display); }
+  .modal p { color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+  .modal-stat { font-size: 14px; margin: 14px 0; background: var(--card-2); padding: 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; border: 1px solid var(--border); }
+  .modal-stat span { font-weight: 700; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .modal-actions .btn { flex: 1; }
+
+  .notif-popup {
+    position: fixed; top: 90px; right: 20px; width: 320px; z-index: 2000; background: var(--card-glass);
+    backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid var(--border-glass); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    padding: 18px 18px 16px; transform: translateX(140%) scale(0.96); opacity: 0; pointer-events: none;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease; overflow: hidden;
+  }
+
+  .action-toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 18px);
+    background: var(--card); color: var(--text-primary); border: 1px solid var(--accent-border);
+    border-radius: 999px; padding: 10px 18px; box-shadow: var(--shadow-lg);
+    font-size: 13px; font-weight: 700; opacity: 0; pointer-events: none; z-index: 1000;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .action-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .notif-popup.show { transform: translateX(0) scale(1); opacity: 1; pointer-events: auto; }
+  .notif-popup-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .notif-icon-badge {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--accent-bg); border: 1px solid var(--accent-border);
+    display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; color: var(--accent);
+  }
+  .notif-title-block { flex: 1; min-width: 0; }
+  .notif-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+  .notif-subtitle { font-size: 11px; color: var(--text-muted); }
+  .notif-close {
+    border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 15px; width: 26px; height: 26px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: var(--transition); flex-shrink: 0;
+  }
+  .notif-close:hover { background: var(--card-2); color: var(--text-primary); }
+  .notif-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px; }
+  .notif-timer-track { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--border); }
+  .notif-timer-fill { height: 100%; width: 100%; background: var(--accent); transform-origin: left; transform: scaleX(1); }
+
+  @media (max-width: 640px) { .notif-popup { left: 12px; right: 12px; width: auto; top: auto; bottom: 16px; } }
+  @media (max-width: 480px) {
+    .action-item { flex-wrap: wrap; row-gap: 10px; }
+    .action-item-buttons { width: 100%; flex-shrink: 1; }
+    .action-item-buttons .btn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  }
+
+  details.advanced {
+    background: var(--card-glass); backdrop-filter: blur(18px) saturate(180%); -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid var(--border-glass); border-radius: var(--radius-lg); padding: 6px 20px; box-shadow: var(--shadow-sm); transition: var(--transition);
+  }
+  details.advanced[open] { box-shadow: var(--shadow-md); }
+  details.advanced > summary {
+    list-style: none; cursor: pointer; padding: 16px 0; font-size: 14px; font-weight: 700; color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: space-between; user-select: none;
+  }
+  details.advanced > summary::-webkit-details-marker { display: none; }
+  .chevron { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: var(--accent); font-size: 12px; }
+  details.advanced[open] .chevron { transform: rotate(180deg); }
+  .advanced-body { padding-bottom: 20px; }
+  .sub-card { background: var(--card-2-glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; transition: var(--transition); }
+  .sub-card:hover { border-color: var(--accent-border); }
+  .sub-card h3 { margin: 0 0 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 7px; }
+  .sub-card small { display: block; color: var(--text-muted); font-size: 12px; margin: -4px 0 8px; }
+  .key-help { display: none; margin-top: 8px; font-size: 12px; }
+  .key-help.show { display: block; }
+  .key-help summary { cursor: pointer; color: var(--accent); list-style: none; font-weight: 500; }
+  .key-help summary::-webkit-details-marker { display: none; }
+  .key-help ol { margin: 10px 0 6px; padding-left: 20px; color: var(--text-secondary); line-height: 1.7; }
+  .key-help code { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 12px; }
+  .debug-grid { display: grid; grid-template-columns: 1fr auto; row-gap: 9px; column-gap: 20px; font-size: 13px; }
+  .debug-grid span { color: var(--text-secondary); }
+  .debug-grid b { color: var(--accent); font-weight: 700; text-align: right; }
+
+  @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) {
+    .app { padding: 14px 12px 40px; gap: 18px; }
+    .btn-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+    .btn-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+    .chat-box { height: 240px; }
+    .card { padding: 16px; }
+    .vision-stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <svg width="32" height="32" viewBox="0 0 30 30" aria-hidden="true">
+        <rect x="10" y="14" width="10" height="14" rx="3" fill="var(--text-primary)"></rect>
+        <rect x="7" y="2" width="16" height="12" rx="4" fill="var(--text-primary)"></rect>
+        <circle cx="12" cy="8" r="1.8" fill="#000"></circle>
+        <circle cx="18" cy="8" r="1.8" fill="#000"></circle>
+        <circle cx="12" cy="8" r="0.9" fill="var(--accent)"></circle>
+        <circle cx="18" cy="8" r="0.9" fill="var(--accent)"></circle>
+      </svg>
+      <span class="brand-title">Curie</span>
+      <span class="status-badge" id="status">
+        <span class="status-dot" id="status-dot"></span><span id="status-text">Online</span>
+      </span>
+      <span class="poweredby-pill">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path></svg>
+        <span id="poweredby-text">Powered by Arduino UNO Q</span>
+      </span>
+    </div>
+    <div class="theme-switch" onclick="toggleTheme()" role="button" tabindex="0" aria-label="Toggle dark mode" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTheme();}">
+      <span id="lbl-dark-mode" style="font-size:13px; color:var(--text-secondary); font-weight: 500;">Dark</span>
+      <div class="switch" id="theme-switch"><div class="thumb"></div></div>
+    </div>
+  </div>
+
+  <div class="hero-intro">
+    <h1 class="hero-tagline" id="hero-tagline">A screen-free companion for staying grounded.</h1>
+    <p class="hero-tagline-sub" id="hero-tagline-sub">Curie sits on your desk and notices when you drift — a phone pickup, a long stretch away from your seat — then gently helps you come back. No screens to get lost in, no shame when a session goes sideways.</p>
+  </div>
+
+  <div class="main-grid">
+    
+    <div class="grid-left">
+      <div class="card hero-face-card">
+        <div class="curie-screen">
+          <div class="curie-face-icon-badge" id="cs-icon" aria-hidden="true">🟢</div>
+          
+          <div class="curie-face mood-default" id="curie-face">
+            
+            <!-- DIGITAL TWIN OVERLAYS -->
+            <div class="digital-twin-overlay pomodoro-display">
+                <div class="pomodoro-streak" style="display:none;"><span aria-hidden="true">🔥</span> <span class="streak-val">0</span></div>
+                <div class="pomodoro-label">- FOCUS WORK -</div>
+                <div class="pomodoro-time">25:00</div>
+                <div class="pomodoro-progress-track"><div class="pomodoro-progress-fill" id="pomo-progress"></div></div>
+            </div>
+            
+            <div class="digital-twin-overlay breathing-display">
+                <div class="breathing-bars">
+                    <div class="b-bar left"></div>
+                    <div class="b-bar right"></div>
+                </div>
+                <div class="breathing-time">02:00</div>
+            </div>
+            
+            <div class="digital-twin-overlay score-display">
+                <div class="score-label">SESSION COMPLETE</div>
+                <div class="score-val">100%</div>
+            </div>
+            
+            <!-- PHYSICAL EYES -->
+            <div class="eye-wrap eye-left">
+              <div class="eye"></div>
+              <div class="eyelid eyelid-top"></div>
+              <div class="eyelid eyelid-bottom"></div>
+            </div>
+            <div class="eye-wrap eye-right">
+              <div class="eye"></div>
+              <div class="eyelid eyelid-top"></div>
+              <div class="eyelid eyelid-bottom"></div>
+            </div>
+            <span class="zzz-float z1" aria-hidden="true">z</span>
+            <span class="zzz-float z2" aria-hidden="true">z</span>
+          </div>
+          
+          <div class="curie-floor-glow" aria-hidden="true"></div>
+          <div class="curie-telemetry" aria-hidden="true">
+            <span class="telemetry-dot"></span><span id="telemetry-label">AWAKE</span>
+          </div>
+          <div class="curie-wake-bar" id="curie-wake-bar" style="display:none;">
+            <button class="btn btn-primary btn-block btn-sm" id="btn-wake-sleep" onclick="wakeUpFromSleep()">☀️ <span id="lbl-wake-sleep">Wake her up</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-row"><span class="card-icon" aria-hidden="true">🎯</span><h2 id="h-focus">Focus &amp; Relaxation</h2></div>
+          <div class="card-subtitle" id="h-focus-sub">Pomodoro timer &amp; breathing exercises</div>
+        </div>
+        <div class="btn-grid cols-2" style="margin-bottom:10px;">
+          <button class="btn" onclick="startPomo(25, 5)">🍅 25 | 5</button>
+          <button class="btn" onclick="startPomo(50, 10)">🍅 50 | 10</button>
+        </div>
+        <div class="btn-grid cols-2" style="margin-bottom:12px;">
+          <button class="btn btn-sm" id="btn-breathing" onclick="startBreathing()">🌬️ Breathe</button>
+          <button class="btn btn-sm" id="btn-start-task" onclick="startTask()">▶ Start task</button>
+        </div>
+        <div class="btn-grid cols-2">
+          <button class="btn" onclick="togglePausePomo()" id="btn-pausetimer" style="border-color: var(--warning); color: var(--warning);">⏸ Pause</button>
+          <button class="btn btn-danger" onclick="stopPomo()" id="btn-stoptimer">⏹ Stop</button>
+        </div>
+      </div>
+
+
+
+      <!-- MERGED CALENDAR & NOTES CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-row"><span class="card-icon" aria-hidden="true">📅</span><h2 id="h-calendar">Calendar & Notes</h2></div>
+          <div class="card-subtitle" id="h-calendar-sub">Today's schedule & notes</div>
+        </div>
+        
+        <div id="calendar-events-container"><div style="color:var(--text-muted); font-size:13px;">No events today.</div></div>
+        
+        <div style="border-top: 1px solid var(--border); margin: 12px 0; padding-top: 12px;">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 700;">Notes</div>
+          <div id="braindump-container">
+            <div style="color:var(--text-muted); font-size:13px;">No notes right now.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-row"><span class="card-icon" aria-hidden="true">⚙️</span><h2 id="h-settings">Settings</h2></div>
+          <div class="card-subtitle" id="h-settings-sub">Robot preferences</div>
+        </div>
+          <div class="action-item" style="margin-bottom:16px;">
+            <div class="action-item-info">
+              <span class="action-item-icon" aria-hidden="true">😴</span>
+              <div>
+                <div class="action-item-title">Power-saving mode</div>
+                <div class="action-item-desc">Puts Curie into low-power hibernation</div>
+              </div>
+            </div>
+            <div class="action-item-buttons">
+              <button class="btn btn-sm" id="btn-hibernate" onclick="toggleHibernate()">Hibernate</button>
+              <button class="btn btn-sm btn-primary" id="btn-wakeup" onclick="wakeUpCurie()" style="display:none;">☀️ Wake up</button>
+            </div>
+          </div>
+        <div class="field">
+          <label>Speaker volume <span id="vol-val">100%</span></label>
+          <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="updateVolume()" aria-label="Speaker volume">
+        </div>
+        <div class="field">
+          <label>Personality humour <span id="humor-val">5/10</span></label>
+          <input type="range" id="humor-slider" min="1" max="10" value="5" oninput="updateHumor()" aria-label="Personality humour">
+        </div>
+        <div class="field">
+          <label>Country / Time zone</label>
+          <select id="country-select" class="input" onchange="updateCountry()" aria-label="Country and time zone">
+            <option value="India">🇮🇳 India — Asia/Kolkata</option>
+            <option value="United Kingdom">🇬🇧 United Kingdom — Europe/London</option>
+            <option value="United States">🇺🇸 United States — America/New_York</option>
+            <option value="Japan">🇯🇵 Japan — Asia/Tokyo</option>
+            <option value="United Arab Emirates">🇦🇪 United Arab Emirates — Asia/Dubai</option>
+            <option value="Australia">🇦🇺 Australia — Australia/Sydney</option>
+            <option value="France">🇫🇷 France — Europe/Paris</option>
+            <option value="Singapore">🇸🇬 Singapore — Asia/Singapore</option>
+          </select>
+          <div id="location-status" style="font-size:12px; color:var(--text-muted); margin-top:6px;">India — timezone set automatically</div>
+        </div>
+        <div class="toggle-row" onclick="document.getElementById('toggle-voice-mute').click()">
+          <span id="lbl-mute">Mute voice</span>
+          <input type="checkbox" id="toggle-voice-mute" onchange="updateVoiceMute()" class="visually-hidden">
+          <div class="switch" id="switch-mute"><div class="thumb"></div></div>
+        </div>
+        <div class="toggle-row" style="flex-direction: column; align-items: flex-start; gap: 2px;" onclick="document.getElementById('toggle-reduced-motion').click()">
+          <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+            <span id="lbl-reduced-motion-main">Reduced motion</span>
+            <input type="checkbox" id="toggle-reduced-motion" onchange="updateReducedMotion()" class="visually-hidden">
+            <div class="switch" id="switch-reduced-motion"><div class="thumb"></div></div>
+          </div>
+          <div class="card-subtitle" id="lbl-reduced-motion-comment" style="margin: 0;">Disable servo movement</div>
+        </div>
+      </div>
+
+
+    </div>
+
+    <div class="grid-right">
+      <div class="card hero-vision-card">
+        <div class="card-header">
+          <div class="card-title-row"><span class="card-icon" aria-hidden="true">👁️</span><h2 id="h-vision-hero">Curie's View</h2></div>
+          <div class="card-subtitle" id="h-vision-hero-sub">Live presence &amp; focus detection</div>
+        </div>
+        <div class="vision-panel-media">
+          <iframe id="video-feed" src="" title="Curie's live camera view" scrolling="no" allowfullscreen></iframe>
+          <div class="vision-scan-line" aria-hidden="true"></div>
+          <span class="vision-corner tl" aria-hidden="true"></span>
+          <span class="vision-corner tr" aria-hidden="true"></span>
+          <span class="vision-corner bl" aria-hidden="true"></span>
+          <span class="vision-corner br" aria-hidden="true"></span>
+          <div class="vision-live-pill" id="vision-live-pill"><span class="dot" aria-hidden="true"></span><span id="vision-live-text">Live</span></div>
+          <div class="vision-placeholder" id="vision-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="3.4"/></svg>
+            <span id="vision-waiting-text">Waiting for Curie's camera to connect&hellip;</span>
+          </div>
+        </div>
+        <div class="vision-stats">
+          <div class="vision-stat"><div class="vision-stat-label" id="lbl-vision-person">Person present</div><div class="vision-stat-value" id="hero-person">—</div></div>
+          <div class="vision-stat"><div class="vision-stat-label" id="lbl-vision-phone">Phone</div><div class="vision-stat-value" id="hero-phone">—</div></div>
+          <div class="vision-stat"><div class="vision-stat-label" id="lbl-vision-seated">Time present</div><div class="vision-stat-value" id="hero-seated">00:00</div></div>
+          <div class="vision-stat"><div class="vision-stat-label" id="lbl-vision-session">Session</div><div class="vision-stat-value" id="hero-session">No active session</div></div>
+        </div>
+        <p class="vision-caption" id="vision-caption">Processed on-device through the onboard NPU — Curie watches for presence and phone pickups during focus sessions. Nothing is recorded or uploaded.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-row"><span class="card-icon" aria-hidden="true">🔥</span><h2>Focus Streak</h2></div>
+          <div class="card-subtitle">Any day you show up counts</div>
+        </div>
+        <div class="streak-main">
+          <div class="streak-flame" id="streak-flame-icon" aria-hidden="true">🔥</div>
+          <div class="streak-count-block">
+            <div class="streak-count" id="streak-count">0</div>
+            <div class="streak-count-label">day streak</div>
+          </div>
+          <div class="streak-best">
+            <div class="streak-best-num" id="streak-best">0</div>
+            <div class="streak-best-label">best ever</div>
+          </div>
+        </div>
+        <div class="streak-dots" id="streak-dots"></div>
+        <div class="streak-risk-msg" id="streak-risk-msg" style="display:none;">
+          Your streak is paused. Log a session today to keep the flame alive!
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-row"><span class="card-icon" aria-hidden="true">📊</span><h2 id="h-habits">Habits &amp; Weekly Trends</h2></div>
+          <div class="card-subtitle" id="h-habits-sub">Last 7 days</div>
+        </div>
+        <div id="habits-box">
+          <div style="color:var(--text-muted); font-size:13px;">No habit data yet — finish a focus session to start tracking.</div>
+        </div>
+        <button class="btn btn-block" style="margin-top:4px;" onclick="socket.emit('trigger_weekly_summary', {})" id="btn-weekly">Get weekly summary now</button>
+      </div>
+
+
+    </div>
+  </div>
+
+  <div class="card chat-card">
+    <div class="chat-card-header" onclick="toggleChat()">
+      <div class="card-title-row"><span class="card-icon" aria-hidden="true">💬</span><h2>Talk to Curie</h2></div>
+      <i class="chevron" id="chat-chevron">▼</i>
+    </div>
+    <div class="chat-card-body" id="chat-card-body">
+      
+      <div class="task-banner" id="task-banner">
+        <div>
+          <div class="task-banner-sub" id="task-step-counter">Step 1 of 3</div>
+          <div class="task-banner-text" id="task-current-step">Open the document.</div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="socket.emit('user_speech_input', {text: 'next'})">Mark Done</button>
+      </div>
+
+      <div class="chat-box" id="chat-box" aria-live="polite">
+        <div class="msg curie">Hello! I am Curie. Ready to focus with you!</div>
+      </div>
+      <div class="row">
+        <input type="text" id="chat-input" placeholder="Type a message or command..." onkeydown="if(event.key === 'Enter') sendMessage()">
+        <button class="btn btn-primary" onclick="sendMessage()" id="btn-send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="report-modal" class="modal-overlay">
+    <div class="modal">
+      <h1>Session Report</h1>
+      <p id="rep-msg">Great job completing your focus session!</p>
+      <div class="modal-stat">Phone pickups <span id="rep-phones" style="color:var(--warning);">0</span></div>
+      <div class="modal-stat">Times walked away <span id="rep-afk" style="color:var(--accent);">0</span></div>
+      <div class="modal-stat">Time spent on phone <span id="rep-phone-time" style="color:var(--warning);">0m 0s</span></div>
+      <div class="modal-stat">Overall focus score <span id="rep-score">100%</span></div>
+      <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="document.getElementById('report-modal').classList.remove('show')">Close</button>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="modal">
+      <h1 id="confirm-title">Are you sure?</h1>
+      <p id="confirm-message">This action can't be undone.</p>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeConfirm()">Cancel</button>
+        <button class="btn btn-danger btn-primary" id="confirm-btn" style="background:var(--danger); border-color:var(--danger); color:#fff;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-toast" id="action-toast" aria-live="polite"></div>
+
+  <div id="notif-popup" class="notif-popup" role="status" aria-live="polite">
+    <div class="notif-popup-header">
+      <span class="notif-icon-badge" aria-hidden="true">🔔</span>
+      <div class="notif-title-block">
+        <div class="notif-title">Curie has something to say</div>
+        <div class="notif-subtitle" id="notif-subtitle-text">Auto-dismisses in 60s</div>
+      </div>
+      <button class="notif-close" onclick="dismissNotification()" aria-label="Dismiss notification">✕</button>
+    </div>
+    <div class="notif-body" id="notif-body">Tap below to hear what's on her mind.</div>
+    <button class="btn btn-primary btn-block" onclick="acceptNotification()">🔔 Hear Curie's response</button>
+    <div class="notif-timer-track"><div class="notif-timer-fill" id="notif-timer-fill"></div></div>
+  </div>
+
+  <details class="advanced">
+    <summary>
+      <span id="h-advanced">Advanced Options</span>
+      <i class="chevron">▼</i>
+    </summary>
+    <div class="advanced-body">
+
+      <div class="sub-card">
+        <h3 id="h-vision">📷 Vision Engine — Raw Debug Data</h3>
+        <small>Technical readout for development &amp; troubleshooting. The presentable live view is in the "Curie's View" card up top.</small>
+        <div class="row" style="margin-bottom:12px;">
+          <input type="text" id="cam-res-input" placeholder="e.g. 640x480" value="640x480" oninput="updateCamResolution()" style="max-width:140px;" aria-label="Camera resolution">
+          <span style="font-size:12px; color:var(--text-muted); align-self:center;">Match your camera's resolution</span>
+        </div>
+        <div class="debug-grid">
+          <span>Person detected</span><b id="dbg-person">False</b>
+          <span>Phone detected</span><b id="dbg-phone">False</b>
+          <span>Raw AI labels</span><b id="dbg-raw">None</b>
+          <span>Time present</span><b id="dbg-seated">00:00</b>
+          <span>Timer active</span><b id="dbg-pomo-status">False</b>
+          <span>Timer paused</span><b id="dbg-pomo-paused">False</b>
+          <span>Phone pickups</span><b id="dbg-pickups">0</b>
+          <span>AFK count</span><b id="dbg-afk">0</b>
+          <span>Camera online</span><b id="dbg-camera">False</b>
+        </div>
+      </div>
+
+      <div class="sub-card">
+        <h3 id="h-memory">🧠 Curie's Memory &amp; Logs</h3>
+        <div class="memory-box-wrap">
+          <div class="memory-box" id="memory-box" style="margin-bottom:12px;">
+            <div>No memories recorded yet...</div>
+          </div>
+          <button class="memory-clear-btn" type="button" onclick="confirmClearMemory()" title="Clear long-term memory" aria-label="Clear long-term memory">Clear memory</button>
+        </div>
+        <div class="log-box" id="log-box" aria-live="polite">
+          <div>[SYSTEM] UI initialized.</div>
+        </div>
+      </div>
+
+      <div class="sub-card">
+        <h3 id="h-connections">🔑 Connections &amp; API Keys</h3>
+        <div class="field">
+          <label>Groq API key</label>
+          <small>Powers conversation, memory, and speech-to-text</small>
+          <input type="text" id="groq-key-input" placeholder="gsk_..." oninput="saveSettings(); toggleKeyHelp('groq')">
+          <details class="key-help" id="help-groq"><summary>How do I get this? →</summary>
+            <ol>
+              <li>Go to <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a> and sign up (free).</li>
+              <li>Click "Create API Key", give it a name.</li>
+              <li>Copy the key (starts with <code>gsk_</code>) and paste it above.</li>
+            </ol>
+          </details>
+        </div>
+        <div class="field">
+          <label>Cartesia API key</label>
+          <input type="text" id="cartesia-api-key-input" placeholder="sk_..." oninput="saveSettings(); toggleKeyHelp('cartesia')">
+          <details class="key-help" id="help-cartesia"><summary>How do I get this? →</summary>
+            <ol>
+              <li>Go to <a href="https://play.cartesia.ai" target="_blank" rel="noopener">play.cartesia.ai</a> and sign up.</li>
+              <li>Open Settings → API Keys → Create Key.</li>
+              <li>Copy the key (starts with <code>sk_</code>) and paste it above.</li>
+            </ol>
+          </details>
+        </div>
+        <div class="field">
+          <label>Cartesia voice ID</label>
+          <small>Leave blank for the default voice</small>
+          <input type="text" id="cartesia-voice-id-input" placeholder="a0e99841-438c-4a64-b6a9-ae08b75653b6" oninput="saveSettings()">
+          <details class="key-help"><summary>How do I find a voice ID? →</summary>
+            <ol>
+              <li>In Cartesia, open the Voice Library and browse voices.</li>
+              <li>Click a voice you like, copy its ID, and paste it above.</li>
+            </ol>
+          </details>
+        </div>
+        <div class="field">
+          <label>Google Calendar OAuth</label>
+          <small>Required for reminders and task completion</small>
+          <input type="text" id="google-client-id-input" placeholder="Client ID" oninput="saveSettings(); toggleKeyHelp('google')" style="margin-bottom:10px;">
+          <input type="text" id="google-client-secret-input" placeholder="Client secret" oninput="saveSettings(); toggleKeyHelp('google')" style="margin-bottom:10px;">
+          <input type="text" id="google-refresh-token-input" placeholder="Refresh token" oninput="saveSettings(); toggleKeyHelp('google')">
+          <details class="key-help" id="help-google"><summary>How do I get this? (the hard one) →</summary>
+            <ol>
+              <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener">Google Cloud Console</a> and create a new project.</li>
+              <li>Under APIs & Services → Library, enable the <b>Google Calendar API</b>.</li>
+              <li>Under APIs & Services → OAuth consent screen, set it to External and add your own email as a test user.</li>
+              <li>Under Credentials, create an OAuth Client ID of type <b>Desktop app</b>. Copy the Client ID and Client Secret.</li>
+              <li>Run the included <code>get_google_refresh_token.py</code> script on your computer with those two values — it opens a browser, you sign in and grant calendar access, and it prints a Refresh Token.</li>
+              <li>Paste all three values above.</li>
+            </ol>
+            <p style="color:var(--text-muted); font-size:12px;">Full walkthrough with screenshots: see the project write-up.</p>
+          </details>
+        </div>
+        <div class="field">
+          <label>Google Calendar iCal URL (fallback)</label>
+          <small>Read-only — used only if OAuth above is empty</small>
+          <input type="text" id="calendar-url-input" placeholder="https://calendar.google.com/calendar/ical/..." oninput="saveSettings()">
+        </div>
+      </div>
+
+      <div class="sub-card">
+        <h3 id="h-manual">🕹 Manual Controls</h3>
+        <div class="btn-grid cols-4" style="margin-bottom:12px;">
+          <button class="btn" onclick="lookDir(0)" id="btn-look-left">Left</button>
+          <button class="btn" onclick="lookDir(1)" id="btn-look-right">Right</button>
+          <button class="btn" onclick="lookDir(2)" id="btn-look-up">Up</button>
+          <button class="btn" onclick="lookDir(3)" id="btn-look-down">Down</button>
+        </div>
+        <div class="btn-grid cols-2">
+          <button class="btn" onclick="socket.emit('test_board_speaker', {})">Test chime</button>
+          <button class="btn" onclick="showNotification('This is a preview of the pop-up Curie will use for proactive nudges, like morning briefings or weekly recaps.')">🔔 Test notification</button>
+        </div>
+      </div>
+
+    </div>
+  </details>
+
+</div>
+
+<script>
+  const socket = io(window.location.origin);
+  let isBreathing = false;
+  let isHibernating = false;
+  let lastInteractionTs = Date.now();
+  let pomodoroRunningClient = false;
+
+  const MOOD_CLASS = { 0: 'default', 1: 'happy', 2: 'tired', 3: 'angry', 4: 'confused', 5: 'laugh' };
+  let currentMood = 'default';
+  let currentActivity = null;
+
+  function renderFace() {
+    const face = document.getElementById('curie-face');
+    if (!face) return;
+    face.className = currentActivity ? ('curie-face activity-' + currentActivity) : ('curie-face mood-' + currentMood);
+  }
+
+  function setFaceActivity(activity, opts) {
+    currentActivity = activity;
+    const screen = document.querySelector('.curie-screen');
+    if (screen) screen.classList.toggle('timer-active', activity === 'pomodoro' || activity === 'breathing');
+    renderFace();
+    clearTimeout(window._faceActivityTimer);
+    if (opts && opts.revertMs) {
+      window._faceActivityTimer = setTimeout(() => {
+        currentActivity = (opts.revertTo === undefined) ? null : opts.revertTo;
+        const screen = document.querySelector('.curie-screen');
+        if (screen) screen.classList.toggle('timer-active', currentActivity === 'pomodoro' || currentActivity === 'breathing');
+        renderFace();
+      }, opts.revertMs);
+    }
+  }
+
+  function setFaceMood(moodCode, revertMs) {
+    currentMood = MOOD_CLASS[moodCode] !== undefined ? MOOD_CLASS[moodCode] : 'default';
+    renderFace();
+    clearTimeout(window._faceMoodTimer);
+    if (revertMs) {
+      window._faceMoodTimer = setTimeout(() => { currentMood = 'default'; renderFace(); }, revertMs);
+    }
+  }
+
+  socket.on("curie_mood", (data) => {
+    if (!data) return;
+    setFaceMood(data.mood, data.revert_ms);
+  });
+
+  socket.on("pomodoro_sync", (data) => {
+    const pTime = document.querySelector(".pomodoro-time");
+    const pauseBtn = document.getElementById("btn-pausetimer");
+    if (data && data.active) {
+      setFaceActivity("pomodoro");
+      const mm = String(data.mins || 0).padStart(2, '0');
+      const ss = String(data.secs || 0).padStart(2, '0');
+      if (pTime) pTime.innerText = `${mm}:${ss}`;
+      pomodoroRunningClient = true;
+      pauseBtn.style.display = "inline-flex";
+      pauseBtn.innerText = data.paused ? "▶ Continue" : "⏸ Pause";
+      if (data.total_secs && !data.is_break) {
+        const currentSecs = (data.mins * 60) + data.secs;
+        document.getElementById("pomo-progress").style.width = ((currentSecs / data.total_secs) * 100) + "%";
+      } else {
+        document.getElementById("pomo-progress").style.width = "0%";
+      }
+    } else {
+      pomodoroRunningClient = false;
+      if (currentActivity === "pomodoro") setFaceActivity(null);
+      pauseBtn.style.display = "inline-flex";
+      pauseBtn.innerText = "⏸ Pause";
+    }
+  });
+
+  socket.on("task_breakdown_sync", (data) => {
+    const banner = document.getElementById("task-banner");
+    if (data && data.steps && data.steps.length > 0 && data.current_index < data.steps.length) {
+      banner.classList.add("show");
+      document.getElementById("task-step-counter").innerText = `Step ${data.current_index + 1} of ${data.steps.length}`;
+      document.getElementById("task-current-step").innerText = data.steps[data.current_index];
+    } else {
+      banner.classList.remove("show");
+    }
+  });
+
+  socket.on("braindump_sync", (data) => {
+    const container = document.getElementById("braindump-container");
+    if (!data.items || data.items.length === 0) {
+      container.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">No notes right now.</div>`;
+      return;
+    }
+    
+    container.innerHTML = data.items.map(item => `
+      <div class="cal-event-row" style="padding: 8px 0;">
+        <input type="checkbox" ${item.done ? "checked" : ""} onchange="socket.emit('toggle_braindump', {id: ${item.id}, done: this.checked})">
+        <span class="cal-event-summary" style="${item.done ? 'text-decoration:line-through; color:var(--text-muted);' : ''}">${item.item}</span>
+      </div>
+    `).join("");
+  });
+
+  let breathingInterval;
+  socket.on("breathing_sync", (data) => {
+    clearInterval(breathingInterval);
+    const active = !!(data && data.active);
+    const pauseBtn = document.getElementById('btn-pausetimer');
+    if (active) {
+      isBreathing = true;
+      setFaceActivity("breathing");
+      const remaining = Math.max(0, Number(data.remaining != null ? data.remaining : data.duration || 120) * 1000);
+      const paused = !!data.paused;
+      updateBreathingTimer(remaining);
+      if (!paused) {
+        const startedAt = Date.now();
+        const initialRemaining = remaining;
+        breathingInterval = setInterval(() => {
+          updateBreathingTimer(Math.max(0, initialRemaining - (Date.now() - startedAt)));
+        }, 100);
+      }
+      if (pauseBtn) {
+        pauseBtn.style.display = 'inline-flex';
+        pauseBtn.innerText = paused ? '▶ Continue' : '⏸ Pause';
+      }
+    } else {
+      isBreathing = false;
+      clearInterval(breathingInterval);
+      if (currentActivity === "breathing") setFaceActivity(null);
+      if (pauseBtn && !pomodoroRunningClient) {
+        pauseBtn.style.display = 'inline-flex';
+        pauseBtn.innerText = '⏸ Pause';
+      }
+    }
+  });
+
+  function updateBreathingTimer(ms) {
+    const secsLeft = Math.max(0, Math.ceil(ms / 1000));
+    const m = String(Math.floor(secsLeft / 60)).padStart(2, '0');
+    const sec = String(secsLeft % 60).padStart(2, '0');
+    const el = document.querySelector('.breathing-time');
+    if (el) el.innerText = `${m}:${sec}`;
+  }
+
+  socket.on("look_sync", (data) => {
+    const dirs = ["look-left", "look-right", "look-up", "look-down"];
+    if (data && data.dir !== undefined && dirs[data.dir]) {
+      setFaceActivity(dirs[data.dir], { revertMs: 2000 });
+    }
+  });
+
+  function toggleChat() {
+    const body = document.getElementById('chat-card-body');
+    const chevron = document.getElementById('chat-chevron');
+    const collapsed = body.classList.toggle('collapsed');
+    chevron.classList.toggle('collapsed', collapsed);
+    localStorage.setItem('chat_collapsed', collapsed ? '1' : '0');
+  }
+
+  let notifInterval = null, notifDeadline = 0;
+  
+  function showNotification(previewText) {
+    const popup = document.getElementById('notif-popup');
+    document.getElementById('notif-body').innerText = previewText || "Tap below to hear what's on her mind.";
+    popup.classList.add('show');
+
+    notifDeadline = Date.now() + 60000;
+    updateNotifCountdown();
+
+    const fill = document.getElementById('notif-timer-fill');
+    fill.style.transition = 'none';
+    fill.style.transform = 'scaleX(1)';
+    void fill.offsetWidth;
+    fill.style.transition = 'transform 60s linear';
+    fill.style.transform = 'scaleX(0)';
+
+    clearInterval(notifInterval);
+    notifInterval = setInterval(updateNotifCountdown, 250);
+  }
+
+  function updateNotifCountdown() {
+    const remaining = Math.max(0, Math.ceil((notifDeadline - Date.now()) / 1000));
+    document.getElementById('notif-subtitle-text').innerText = `Auto-dismisses in ${remaining}s`;
+    if (remaining <= 0) { clearInterval(notifInterval); dismissNotification(); }
+  }
+
+  function dismissNotification() {
+    document.getElementById('notif-popup').classList.remove('show');
+    clearInterval(notifInterval);
+  }
+
+  function acceptNotification() {
+    socket.emit('accept_notification', {});
+    dismissNotification();
+  }
+
+  socket.on("notification_pending", (data) => {
+    showNotification(data && data.text ? data.text : null);
+  });
+
+  socket.on("action_started", (data) => {
+    showActionToast((data && data.text) || 'Started');
+  });
+
+  let actionToastTimer = null;
+  function showActionToast(text) {
+    const toast = document.getElementById('action-toast');
+    if (!toast) return;
+    toast.innerText = text;
+    toast.classList.add('show');
+    clearTimeout(actionToastTimer);
+    actionToastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+  }
+
+  function showConfirm(title, message, onConfirm) {
+    document.getElementById('confirm-title').innerText = title;
+    document.getElementById('confirm-message').innerText = message;
+    const modal = document.getElementById('confirm-modal');
+    modal.classList.add('show');
+    const confirmBtn = document.getElementById('confirm-btn');
+    confirmBtn.onclick = () => { modal.classList.remove('show'); onConfirm(); };
+  }
+  function closeConfirm() {
+    document.getElementById('confirm-modal').classList.remove('show');
+  }
+
+  function confirmClearMemory() {
+    showConfirm(
+      "Clear Curie's long-term memory?",
+      "This permanently deletes the saved user facts. Chat history and your notes are not affected.",
+      () => socket.emit('clear_memory', {})
+    );
+  }
+
+  let isAutoAsleep = false;
+
+  function wakeUpFromSleep() {
+    socket.emit('wake_from_sleep', {});
+    isAutoAsleep = false;
+    document.getElementById('curie-wake-bar').style.display = 'none';
+    refreshCurieStatus();
+    touchInteraction();
+  }
+
+  function refreshCurieStatus() {
+    if (isHibernating) setCurieStatus('sleeping');
+    else if (isAutoAsleep) setCurieStatus('asleep');
+    else setCurieStatus('awake');
+  }
+
+  socket.on('curie_sleep_state', (data) => {
+    isAutoAsleep = !!(data && data.asleep);
+    document.getElementById('curie-wake-bar').style.display = isAutoAsleep ? 'block' : 'none';
+    refreshCurieStatus();
+  });
+
+  socket.on("hibernate_sync", (data) => {
+    isHibernating = !!(data && data.hibernating);
+    applyHibernateUI();
+    refreshCurieStatus();
+  });
+
+  function enhanceSelect(selectId) {
+    try {
+      const original = document.getElementById(selectId);
+      if (!original || original.dataset.enhanced) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'custom-select';
+
+      const listboxId = selectId + '-listbox';
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'custom-select-trigger';
+      trigger.setAttribute('aria-haspopup', 'listbox');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-controls', listboxId);
+
+      const label = document.createElement('span');
+      label.className = 'cs-label';
+      const chevron = document.createElement('i');
+      chevron.className = 'cs-chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      chevron.innerHTML = '▾';
+      trigger.appendChild(label);
+      trigger.appendChild(chevron);
+
+      const panel = document.createElement('div');
+      panel.className = 'custom-select-panel';
+      panel.setAttribute('role', 'listbox');
+      panel.id = listboxId;
+
+      let optionEls = [];
+      let activeIndex = Math.max(0, Array.from(original.options).findIndex(o => o.value === original.value));
+
+      function highlight(i) {
+        activeIndex = i;
+        optionEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
+        if (optionEls[i]) {
+          trigger.setAttribute('aria-activedescendant', optionEls[i].id);
+          optionEls[i].scrollIntoView({ block: 'nearest' });
+        }
+      }
+
+      function buildOptions() {
+        panel.innerHTML = '';
+        optionEls = Array.from(original.options).map((opt, i) => {
+          const item = document.createElement('div');
+          item.className = 'cs-option' + (opt.value === original.value ? ' selected' : '');
+          item.setAttribute('role', 'option');
+          item.id = listboxId + '-opt-' + i;
+          item.setAttribute('aria-selected', opt.value === original.value ? 'true' : 'false');
+          item.innerText = opt.innerText;
+          item.addEventListener('click', () => selectIndex(i));
+          panel.appendChild(item);
+          return item;
+        });
+      }
+
+      function selectIndex(i) {
+        const opt = original.options[i];
+        if (!opt) return;
+        const changed = original.value !== opt.value;
+        original.value = opt.value;
+        label.innerText = opt.innerText;
+        closePanel();
+        trigger.focus();
+        if (changed) original.dispatchEvent(new Event('change'));
+        buildOptions();
+        highlight(i);
+        trigger.classList.remove('confirmed');
+        void trigger.offsetWidth; 
+        trigger.classList.add('confirmed');
+      }
+
+      function openPanel() {
+        document.querySelectorAll('.custom-select-panel.open').forEach(p => { if (p !== panel) p.classList.remove('open'); });
+        document.querySelectorAll('.custom-select-trigger[aria-expanded="true"]').forEach(t => { if (t !== trigger) t.setAttribute('aria-expanded', 'false'); });
+        panel.classList.add('open');
+        trigger.classList.add('active');
+        trigger.setAttribute('aria-expanded', 'true');
+        highlight(activeIndex);
+      }
+      function closePanel() {
+        panel.classList.remove('open');
+        trigger.classList.remove('active');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.removeAttribute('aria-activedescendant');
+      }
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (panel.classList.contains('open')) closePanel(); else openPanel();
+      });
+
+      trigger.addEventListener('keydown', (e) => {
+        const open = panel.classList.contains('open');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (!open) { openPanel(); return; }
+          highlight(Math.min(optionEls.length - 1, activeIndex + 1));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (!open) { openPanel(); return; }
+          highlight(Math.max(0, activeIndex - 1));
+        } else if (e.key === 'Home') {
+          if (open) { e.preventDefault(); highlight(0); }
+        } else if (e.key === 'End') {
+          if (open) { e.preventDefault(); highlight(optionEls.length - 1); }
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (open) selectIndex(activeIndex); else openPanel();
+        } else if (e.key === 'Escape') {
+          if (open) { closePanel(); trigger.focus(); }
+        } else if (e.key === 'Tab') {
+          closePanel();
+        }
+      });
+
+      trigger.addEventListener('animationend', () => trigger.classList.remove('confirmed'));
+
+      document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) closePanel();
+      });
+
+      label.innerText = original.options[original.selectedIndex] ? original.options[original.selectedIndex].innerText : '';
+      buildOptions();
+
+      wrapper.appendChild(trigger);
+      wrapper.appendChild(panel);
+      original.parentNode.insertBefore(wrapper, original.nextSibling);
+
+      original.dataset.enhanced = "1";
+      original.classList.add('hidden-select');
+      original.setAttribute('aria-hidden', 'true');
+      original.tabIndex = -1;
+
+      original.addEventListener('change', () => {
+        label.innerText = original.options[original.selectedIndex] ? original.options[original.selectedIndex].innerText : '';
+        buildOptions();
+      });
+
+    } catch (err) {
+      console.error('Dropdown enhancement skipped for', selectId, err);
+    }
+  }
+
+  const STATUS_ICON = {
+    awake: '🟢', listening: '🎙', thinking: '🧠', asleep: '😴', sleeping: '🌙', dancing: '💃'
+  };
+
+  const TELEMETRY_LABELS = { 
+    awake: "AWAKE", listening: "LISTENING", thinking: "THINKING", 
+    asleep: "ASLEEP", sleeping: "POWER-SAVING", dancing: "DANCING", offline: "OFFLINE" 
+  };
+
+  function setCurieStatus(key) {
+    setFaceActivity(key === 'awake' ? null : key);
+    const icon = document.getElementById('cs-icon');
+    if (icon) icon.innerText = STATUS_ICON[key] || STATUS_ICON.awake;
+    const tEl = document.getElementById('telemetry-label');
+    if (tEl) tEl.innerText = TELEMETRY_LABELS[key] || key.toUpperCase();
+  }
+
+  function setStatusBadge(text, mode) {
+    document.getElementById('status-text').innerText = text;
+    const dot = document.getElementById('status-dot');
+    dot.classList.remove('thinking', 'offline');
+    if (mode === 'thinking') dot.classList.add('thinking');
+    else if (mode === 'offline') dot.classList.add('offline');
+  }
+
+  function setConnection(online) {
+  }
+
+  function touchInteraction() {
+    lastInteractionTs = Date.now();
+  }
+
+  socket.on("streak_sync", (data) => {
+    document.getElementById("streak-count").innerText = data.current;
+    document.getElementById("streak-best").innerText = data.best;
+
+    const flame = document.getElementById("streak-flame-icon");
+    flame.classList.toggle("pulse", data.current > 0);
+    flame.style.opacity = data.current > 0 ? "1" : "0.35";
+
+    const dotsContainer = document.getElementById("streak-dots");
+    dotsContainer.innerHTML = "";
+    (data.last7 || []).forEach(day => {
+      const dot = document.createElement("div");
+      dot.className = "streak-dot" + (day.done ? " filled" : "") + (day.is_today ? " today" : "");
+      dot.title = day.date;
+      dotsContainer.appendChild(dot);
+    });
+
+    document.getElementById("streak-risk-msg").style.display = data.at_risk ? "block" : "none";
+  });
+
+  function barClass(pct) { return pct >= 66 ? '' : 'warn'; }
+  function inverseBarClass(count, cap) {
+    const pct = Math.min(100, (count / cap) * 100);
+    return pct <= 25 ? '' : 'warn';
+  }
+
+  function renderHabits(lines) {
+    const container = document.getElementById('habits-box');
+    if (!lines || lines.length === 0) {
+      container.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">No habit data yet — finish a focus session to start tracking.</div>`;
+      return;
+    }
+
+    const re = /^(\S+)\s+—\s+(\d+)\s+sessions?,\s+(\d+)%\s+avg,\s+(\d+)\s+pickups,\s+(\d+)\s+AFKs?/;
+    const parsedRows = lines.map(line => {
+      const m = line.match(re);
+      if (!m) return { raw: line, parsed: false };
+      return { raw: line, parsed: true, date: m[1], sessions: parseInt(m[2]), avg: parseInt(m[3]), pickups: parseInt(m[4]), afk: parseInt(m[5]) };
+    });
+
+    let html = '';
+    const latest = parsedRows[0];
+    if (latest && latest.parsed) {
+      const scorePct = Math.max(0, Math.min(100, latest.avg));
+      const pickupCap = 10, afkCap = 10;
+      const pickupPct = Math.min(100, (latest.pickups / pickupCap) * 100);
+      const afkPct = Math.min(100, (latest.afk / afkCap) * 100);
+
+      html += '<div class="habit-bars">';
+      html += `
+        <div class="habit-bar-item">
+          <div class="habit-bar-label"><span>Pomodoro Score</span><b>${scorePct}%</b></div>
+          <div class="habit-bar-track"><div class="habit-bar-fill ${barClass(scorePct)}" style="width:${scorePct}%"></div></div>
+        </div>
+        <div class="habit-bar-item">
+          <div class="habit-bar-label"><span>Phone Pickups</span><b>${latest.pickups}</b></div>
+          <div class="habit-bar-track"><div class="habit-bar-fill ${inverseBarClass(latest.pickups, pickupCap)}" style="width:${pickupPct}%"></div></div>
+        </div>
+        <div class="habit-bar-item">
+          <div class="habit-bar-label"><span>AFKs</span><b>${latest.afk}</b></div>
+          <div class="habit-bar-track"><div class="habit-bar-fill ${inverseBarClass(latest.afk, afkCap)}" style="width:${afkPct}%"></div></div>
+        </div>
+      `;
+      html += '</div>';
+    }
+
+    const rest = parsedRows.slice(latest && latest.parsed ? 1 : 0);
+    if (rest.length > 0) {
+      html += `<div class="habit-history"><div class="habit-history-label">Previous days</div>`;
+      html += '<div class="log-box" style="height:90px;">';
+      html += rest.map(r => `<div>${r.raw}</div>`).join('');
+      html += '</div></div>';
+    }
+
+    container.innerHTML = html || `<div style="color:var(--text-muted); font-size:13px;">No habit data yet — finish a focus session to start tracking.</div>`;
+  }
+
+  function toggleKeyHelp(which) {
+    if (which === 'groq') {
+      const empty = document.getElementById("groq-key-input").value.trim() === "";
+      document.getElementById("help-groq").classList.toggle("show", empty);
+    } else if (which === 'cartesia') {
+      const empty = document.getElementById("cartesia-api-key-input").value.trim() === "";
+      document.getElementById("help-cartesia").classList.toggle("show", empty);
+    } else if (which === 'google') {
+      const empty = document.getElementById("google-client-id-input").value.trim() === "" ||
+                    document.getElementById("google-client-secret-input").value.trim() === "" ||
+                    document.getElementById("google-refresh-token-input").value.trim() === "";
+      document.getElementById("help-google").classList.toggle("show", empty);
+    }
+  }
+
+  function applyCamResolution(resStr) {
+    const media = document.querySelector('.vision-panel-media');
+    if (!media) return;
+    const parts = resStr.toLowerCase().split(/[x×]/).map(s => parseInt(s.trim()));
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      media.style.aspectRatio = '4 / 3';
+      media.style.maxWidth = '';
+      media.style.minWidth = '';
+      return;
+    }
+    const MIN_DISPLAY_W = 240; 
+    const MAX_DISPLAY_W = 480; 
+    media.style.aspectRatio = `${parts[0]} / ${parts[1]}`;
+    media.style.minWidth = Math.min(MIN_DISPLAY_W, MAX_DISPLAY_W) + 'px';
+    media.style.maxWidth = MAX_DISPLAY_W + 'px';
+    localStorage.setItem("cam_resolution", resStr);
+  }
+  function updateCamResolution() {
+    const val = document.getElementById("cam-res-input").value.trim();
+    applyCamResolution(val);
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme");
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("ui_theme", next);
+    syncThemeSwitch();
+  }
+  function syncThemeSwitch() {
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.getElementById("theme-switch").classList.toggle("on", isDark);
+  }
+
+  let cameraOnline = false;
+
+  function setCameraOnline(online) {
+    online = !!online;
+    if (online === cameraOnline) return;
+    cameraOnline = online;
+
+    const feed = document.getElementById('video-feed');
+    const placeholder = document.getElementById('vision-placeholder');
+    const waitingText = document.getElementById('vision-waiting-text');
+    const livePill = document.getElementById('vision-live-pill');
+
+    if (online) {
+      const url = `${window.location.protocol}//${window.location.hostname}:4912/embed`;
+      feed.src = url;
+      placeholder.classList.add('hide');
+      livePill.classList.add('show');
+    } else {
+      feed.src = '';
+      waitingText.innerText = "Waiting for Curie's camera to connect…";
+      placeholder.classList.remove('hide');
+      livePill.classList.remove('show');
+    }
+  }
+
+  socket.on("camera_status", (data) => {
+    setCameraOnline(data && data.online);
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    syncThemeSwitch();
+
+    const savedRes = localStorage.getItem("cam_resolution") || "640x480";
+    document.getElementById("cam-res-input").value = savedRes;
+    applyCamResolution(savedRes);
+
+    document.getElementById("groq-key-input").value = localStorage.getItem("groq_key") || "";
+    document.getElementById("cartesia-api-key-input").value = localStorage.getItem("cartesia_api_key") || "";
+    document.getElementById("cartesia-voice-id-input").value = localStorage.getItem("cartesia_voice_id") || "";
+    document.getElementById("calendar-url-input").value = localStorage.getItem("calendar_url") || "";
+    document.getElementById("google-client-id-input").value = localStorage.getItem("google_client_id") || "";
+    document.getElementById("google-client-secret-input").value = localStorage.getItem("google_client_secret") || "";
+    document.getElementById("google-refresh-token-input").value = localStorage.getItem("google_refresh_token") || "";
+    toggleKeyHelp('groq'); toggleKeyHelp('cartesia'); toggleKeyHelp('google');
+
+
+    const savedLocation = localStorage.getItem("curie_location");
+    if (savedLocation) {
+      try {
+        const loc = JSON.parse(savedLocation);
+        const country = loc.country || "India";
+        const select = document.getElementById("country-select");
+        if ([...select.options].some(o => o.value === country)) select.value = country;
+        const cfg = COUNTRY_CONFIG[country] || COUNTRY_CONFIG["India"];
+        document.getElementById("location-status").innerText = `${country} — timezone: ${cfg.timezone}`;
+      } catch (e) {}
+    } else {
+      document.getElementById("country-select").value = "India";
+      updateCountry();
+    }
+
+    const savedVol = localStorage.getItem("speaker_vol") || "100";
+    document.getElementById("vol-slider").value = savedVol;
+    document.getElementById("vol-val").innerText = savedVol + "%";
+
+    const savedHumor = localStorage.getItem("curie_humor") || "5";
+    document.getElementById("humor-slider").value = savedHumor;
+    document.getElementById("humor-val").innerText = savedHumor + "/10";
+
+
+    const savedMute = localStorage.getItem("voice_mute") === 'true';
+    document.getElementById("toggle-voice-mute").checked = savedMute;
+    document.getElementById("switch-mute").classList.toggle("on", savedMute);
+
+    const savedMotion = localStorage.getItem("reduced_motion") === 'true';
+    document.getElementById("toggle-reduced-motion").checked = savedMotion;
+    document.getElementById("switch-reduced-motion").classList.toggle("on", savedMotion);
+
+    const chatCollapsed = localStorage.getItem('chat_collapsed') === '1';
+    if (chatCollapsed) {
+      const body = document.getElementById('chat-card-body');
+      const chevron = document.getElementById('chat-chevron');
+      body.style.transition = 'none';
+      body.classList.add('collapsed');
+      chevron.classList.add('collapsed');
+      requestAnimationFrame(() => { body.style.transition = ''; });
+    }
+
+
+    setCurieStatus('awake');
+    setConnection(true);
+    renderHabits([]);
+
+    const chatInputEl = document.getElementById('chat-input');
+    chatInputEl.addEventListener('focus', () => setFaceActivity('listening'));
+    chatInputEl.addEventListener('blur', () => { if (!pomodoroRunningClient) setFaceActivity(null); });
+
+    socket.on("connect", () => {
+      setConnection(true);
+      setStatusBadge("Online", 'online');
+      setFaceActivity(null);
+      saveSettings();
+      const savedLocation = localStorage.getItem("curie_location");
+      if (savedLocation) { try { socket.emit("update_weather_loc", JSON.parse(savedLocation)); } catch (e) {} }
+      updateVoiceMute();
+      socket.emit("update_volume", { volume: parseInt(savedVol) });
+      socket.emit("update_humor", { humor: parseInt(savedHumor) });
+      socket.emit("update_reduced_motion", { reduced_motion: savedMotion });
+      socket.emit("request_sync", {});
+      socket.emit("request_memory", {});
+    });
+
+    socket.on("disconnect", () => {
+      setConnection(false);
+      setStatusBadge("Offline", 'offline');
+      cameraOnline = false;
+      document.getElementById('video-feed').src = '';
+      document.getElementById('vision-placeholder').classList.remove('hide');
+      document.getElementById('vision-live-pill').classList.remove('show');
+      setFaceActivity('offline');
+    });
+  });
+
+  socket.on("vision_debug", (data) => {
+    pomodoroRunningClient = !!data.pomodoro_running;
+    let pomodoroPausedClient = !!data.pomodoro_paused;
+    
+    document.getElementById("dbg-person").innerText = data.person_detected ? "True" : "False";
+    document.getElementById("dbg-phone").innerText = data.phone_detected ? "True" : "False";
+    document.getElementById("dbg-raw").innerText = data.raw_labels;
+    document.getElementById("dbg-pomo-status").innerText = data.pomodoro_running ? "True" : "False";
+    document.getElementById("dbg-pomo-paused").innerText = pomodoroPausedClient ? "True" : "False";
+    document.getElementById("dbg-pickups").innerText = data.phone_pickups;
+    document.getElementById("dbg-afk").innerText = data.afk_count;
+    document.getElementById("dbg-camera").innerText = !!data.camera_online ? "True" : "False";
+    
+    const secs = data.seated_seconds || 0;
+    const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+    const ss = String(secs % 60).padStart(2, "0");
+    document.getElementById("dbg-seated").innerText = `${mm}:${ss}`;
+
+    document.getElementById("hero-person").innerText = data.person_detected ? "Yes" : "No";
+    document.getElementById("hero-phone").innerText = data.phone_detected ? "Visible" : "Not visible";
+    document.getElementById("hero-seated").innerText = `${mm}:${ss}`;
+    let sessionLabel = "No active session";
+    if (pomodoroRunningClient) sessionLabel = pomodoroPausedClient ? "Paused — away" : "Focused";
+    document.getElementById("hero-session").innerText = sessionLabel;
+
+
+    if (typeof data.camera_online !== "undefined") setCameraOnline(data.camera_online);
+  });
+
+  socket.on("update_memory", (data) => {
+    document.getElementById("memory-box").innerHTML = `<div>${data.text}</div>`;
+  });
+
+  socket.on("habits_sync", (data) => {
+    renderHabits(data.lines || []);
+  });
+
+  socket.on("calendar_sync", (data) => {
+    renderCalendarEvents(data.events || []);
+  });
+
+  function renderCalendarEvents(events) {
+    const container = document.getElementById("calendar-events-container");
+    if (!events.length) {
+      container.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">No events today.</div>`;
+      return;
+    }
+    container.innerHTML = events.map(ev => `
+      <div class="cal-event-row">
+        ${ev.id ? `<input type="checkbox" ${ev.done ? "checked" : ""} onchange="toggleCalTask('${ev.id}', this.checked)" aria-label="Mark ${ev.summary} done">` : `<span style="width:18px; display:inline-block;"></span>`}
+        <span class="cal-event-time">${ev.time}</span>
+        <span class="cal-event-summary" style="${ev.done ? 'text-decoration:line-through; color:var(--text-muted);' : ''}">${ev.summary}</span>
+      </div>
+    `).join("");
+  }
+
+  function toggleCalTask(id, done) {
+    socket.emit("calendar_toggle_task", { id: id, done: done });
+  }
+
+
+  socket.on("session_report", (data) => {
+    document.getElementById('rep-phones').innerText = data.pickups;
+    document.getElementById('rep-afk').innerText = data.afk;
+    document.getElementById('rep-phone-time').innerText = data.phone_time_str || "0m 0s"; 
+
+    let score = data.score;
+    const scoreEl = document.getElementById('rep-score');
+    const msgEl = document.getElementById('rep-msg');
+    scoreEl.innerText = score + "%";
+
+    if (score >= 80) {
+      msgEl.innerText = "Solid session. Great job showing up.";
+    } else if (score >= 50) {
+      msgEl.innerText = "You stayed at your desk and got time in. That's what counts.";
+    } else {
+      msgEl.innerText = "Some sessions are hard to stay seated for. You showed up and tried, and that's a win.";
+    }
+    document.getElementById('report-modal').classList.add('show');
+    
+    document.querySelector(".score-val").innerText = score + "%";
+    setFaceActivity("score", { revertMs: 5000 });
+  });
+
+  const COUNTRY_CONFIG = {
+    "India": { timezone: "Asia/Kolkata", weather: "Hyderabad" },
+    "United Kingdom": { timezone: "Europe/London", weather: "London" },
+    "United States": { timezone: "America/New_York", weather: "New York" },
+    "Japan": { timezone: "Asia/Tokyo", weather: "Tokyo" },
+    "United Arab Emirates": { timezone: "Asia/Dubai", weather: "Dubai" },
+    "Australia": { timezone: "Australia/Sydney", weather: "Sydney" },
+    "France": { timezone: "Europe/Paris", weather: "Paris" },
+    "Singapore": { timezone: "Asia/Singapore", weather: "Singapore" }
+  };
+
+  function updateCountry() {
+    const country = document.getElementById('country-select').value;
+    const cfg = COUNTRY_CONFIG[country] || COUNTRY_CONFIG['India'];
+    const loc = { country, timezone: cfg.timezone, weather_location: cfg.weather, label: `${country} — ${cfg.timezone}` };
+    localStorage.setItem('curie_location', JSON.stringify(loc));
+    document.getElementById('location-status').innerText = `${country} — timezone: ${cfg.timezone}`;
+    socket.emit('update_weather_loc', loc);
+  }
+
+  function saveSettings() {
+    const gKey = document.getElementById("groq-key-input").value.trim();
+    const cKey = document.getElementById("cartesia-api-key-input").value.trim();
+    const cVoiceId = document.getElementById("cartesia-voice-id-input").value.trim();
+    const calUrl = document.getElementById("calendar-url-input").value.trim();
+    const gClientId = document.getElementById("google-client-id-input").value.trim();
+    const gClientSecret = document.getElementById("google-client-secret-input").value.trim();
+    const gRefreshToken = document.getElementById("google-refresh-token-input").value.trim();
+
+    localStorage.setItem("groq_key", gKey);
+    localStorage.setItem("cartesia_api_key", cKey);
+    localStorage.setItem("cartesia_voice_id", cVoiceId);
+    localStorage.setItem("calendar_url", calUrl);
+    localStorage.setItem("google_client_id", gClientId);
+    localStorage.setItem("google_client_secret", gClientSecret);
+    localStorage.setItem("google_refresh_token", gRefreshToken);
+
+    socket.emit("update_keys", { groq: gKey, cartesia: cKey });
+    socket.emit("update_cartesia_voice_id", cVoiceId);
+    socket.emit("update_calendar_url", calUrl);
+    socket.emit("update_google_creds", { client_id: gClientId, client_secret: gClientSecret, refresh_token: gRefreshToken });
+  }
+
+  function updateVolume() {
+    const vol = document.getElementById("vol-slider").value;
+    document.getElementById("vol-val").innerText = vol + "%";
+    localStorage.setItem("speaker_vol", vol);
+    socket.emit("update_volume", { volume: parseInt(vol) });
+  }
+
+  function updateHumor() {
+    const hum = document.getElementById("humor-slider").value;
+    document.getElementById("humor-val").innerText = hum + "/10";
+    localStorage.setItem("curie_humor", hum);
+    socket.emit("update_humor", { humor: parseInt(hum) });
+  }
+
+
+  function updateVoiceMute() {
+    const mute = document.getElementById("toggle-voice-mute").checked;
+    document.getElementById("switch-mute").classList.toggle("on", mute);
+    localStorage.setItem("voice_mute", mute);
+    socket.emit("update_voice_mute", { mute: mute });
+  }
+
+  function updateReducedMotion() {
+    const on = document.getElementById("toggle-reduced-motion").checked;
+    document.getElementById("switch-reduced-motion").classList.toggle("on", on);
+    localStorage.setItem("reduced_motion", on);
+    socket.emit("update_reduced_motion", { reduced_motion: on });
+  }
+
+  function toggleHibernate() {
+    isHibernating = !isHibernating;
+    applyHibernateUI();
+    socket.emit("toggle_hibernate", { state: isHibernating });
+    refreshCurieStatus();
+    touchInteraction();
+  }
+
+  function wakeUpCurie() {
+    if (!isHibernating) return;
+    isHibernating = false;
+    applyHibernateUI();
+    socket.emit("toggle_hibernate", { state: false });
+    refreshCurieStatus();
+    touchInteraction();
+  }
+
+  function applyHibernateUI() {
+    const hibBtn = document.getElementById("btn-hibernate");
+    const wakeBtn = document.getElementById("btn-wakeup");
+    hibBtn.innerText = isHibernating ? "😴 Power-saving..." : "Hibernate";
+    hibBtn.disabled = isHibernating;
+    wakeBtn.style.display = isHibernating ? "inline-flex" : "none";
+  }
+
+  function startPomo(work, breakMins) {
+    showActionToast(`Pomodoro started`);
+    socket.emit('start_pomodoro', { work: work, break: breakMins });
+    touchInteraction();
+  }
+
+  function startTask() {
+    showActionToast('Task started');
+    socket.emit('start_task', {});
+    touchInteraction();
+  }
+
+  function startBreathing() {
+    showActionToast('Breathing exercise started');
+    socket.emit('start_breathing', { duration: 120 });
+    touchInteraction();
+  }
+
+  function togglePausePomo() {
+    socket.emit('toggle_pause_pomodoro', {});
+    touchInteraction();
+  }
+
+  function stopPomo() {
+    if (isBreathing) {
+      socket.emit('stop_breathing', {});
+      touchInteraction();
+      return;
+    }
+    if (pomodoroRunningClient) {
+      showConfirm(
+        "Stop focus session?",
+        "This ends your current Pomodoro early and logs it with a partial score. Are you sure?",
+        () => { socket.emit("stop_pomodoro", { manual: true }); touchInteraction(); }
+      );
+    } else {
+      socket.emit("stop_pomodoro", { manual: true });
+      touchInteraction();
+    }
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("chat-input");
+    const text = input.value.trim();
+    if (text === "") return;
+    addMessage("user", text);
+    
+    setStatusBadge("Thinking...", "thinking");
+    setCurieStatus('thinking');
+    socket.emit("user_speech_input", { text: text });
+    input.value = "";
+    touchInteraction();
+  }
+
+  socket.on("curie_response", (data) => {
+    const displayText = String((data && data.text) || "").replace(/\[(HAPPY|LAUGH|SAD|ANGRY|CONFUSED|DEFAULT)\]/gi, "").trim();
+    addMessage("curie", displayText);
+    setStatusBadge("Online", "online");
+    refreshCurieStatus();
+    touchInteraction();
+  });
+
+  socket.on("system_log", (data) => {
+    const logBox = document.getElementById("log-box");
+    const logEntry = document.createElement("div");
+    logEntry.innerText = `[${new Date().toLocaleTimeString()}] ${data.text}`;
+    logBox.appendChild(logEntry);
+    logBox.scrollTop = logBox.scrollHeight;
+  });
+
+  function addMessage(sender, text) {
+    const chatBox = document.getElementById("chat-box");
+    const msgDiv = document.createElement("div");
+    msgDiv.classList.add("msg", sender);
+    msgDiv.innerText = text;
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+  }
+
+</script>
+</body>
+</html>
