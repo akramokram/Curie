@@ -1,1 +1,27 @@
-List of Materials:
+CURIE — BILL OF MATERIALS
+
+Main Controller
+Arduino UNO Q — 1
+
+Display
+128×64 0.96inch I2C OLED Display — 1
+
+Motion
+MG90s Servo Motor — 1
+
+Input
+USB A - Webcam with microphone — 1
+TTP223 Touch Sensors — 2
+
+Audio
+Speaker — 1
+
+Mechanical
+3D Printed Curie Body ~ 200g PLA
+
+Other
+Jumper wires / hookup wire — as required
+USB-C cable / power supply — 1
+USB-C Hub with PD-input port - 1
+glue - as required
+rubber feet for base - 4
