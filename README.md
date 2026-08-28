@@ -379,7 +379,7 @@ Curie/
 ## Hardware
 
 1. Assemble the Curie body using the provided CAD files.
-2. Wire the electronics according to the schematic in [`docs/schematic.png`](docs/schematic.png).
+2. Wire the electronics according to the schematic in [`hardware/curie breadboard schematic.png`](hardware/curie breadboard schematic.png).
 3. Connect the OLED, servo, touch sensors, microphone, speaker, and camera.
 4. Install the required Arduino libraries.
 5. Upload the Arduino firmware.
