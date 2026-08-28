@@ -1,0 +1,5 @@
+The following libraries need to be installed in Arduino App Lab:
+
+1 - Adafruit GFX Library
+2 - FluxGarage RoboEyes
+3 - Servo
