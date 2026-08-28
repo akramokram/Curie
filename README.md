@@ -1,57 +1,496 @@
-Problem Statement
+# Curie
 
-ADHD comes with a predictable set of daily struggles: starting a task feels like pushing a boulder, staying on it is a constant battle against distraction, and time itself seems to blur and slip away. Under the surface, these are executive-function challenges — task paralysis, poor sustained attention, time blindness, emotional dysregulation, and a tendency to hyperfocus for so long that you forget to drink water or stand up. Over 200 million adults deal with this globally, and the tools meant to help are almost all app-based timers and focus assistants that live on the very screens most likely to pull your attention away in the first place. There are, however, real techniques that work — body doubling (having someone nearby so you feel accountable), task breakdown (splitting an overwhelming task into tiny steps), structured time-blocking, external cueing (physical reminders outside your own head), sensory grounding, and habit tracking with progressive goals. These are well-documented in clinical literature but almost never delivered through a single physical system. Curie is that system — a desk companion that combines all of these approaches into one device: it sits with you like a body double, breaks tasks down on voice command, runs scored focus sessions, gives you something tactile to touch when you need to reground, guides breathing exercises, tracks your habits with streak-based goals, and nudges you to move or hydrate when it senses you’ve been sitting too long.
+### A social-assistance robot for focus, task initiation, and executive function
 
-How Your Project Works
+Curie is a physical desk companion designed to help people who struggle with task initiation, distraction, and maintaining focus — particularly people with ADHD or executive dysfunction.
 
-Curie is a desk robot built on the Arduino UNO Q that addresses specific ADHD executive-function deficits through a set of interlinked, technique-driven features. Its camera uses on-device object detection to track your physical presence and phone pickups in real time, feeding those signals into a live focus score during work sessions — externalising time blindness and creating micro-rewards, both established accountability mechanisms. Those scores feed into a daily and weekly habit tracker with streak visualisation and progressive goal-setting, where each session’s target is the previous score plus a small increment, turning “do better” into a concrete number. When the camera detects sustained phone use, Curie responds with a gentle verbal nudge, countering distraction cycles through external cueing rather than willpower alone. For task paralysis, the conversational LLM decomposes overwhelming tasks into micro-steps on command. A capacitive touch sensor lets you pet Curie as a tactile grounding mechanism, and the robot guides timed box-breathing exercises with synchronised head movement for emotional regulation. A proactive agent monitors seated duration and issues movement and hydration nudges after 60 and 90 minutes, interrupting hyperfocus before it becomes harmful. Curie also acts as a passive body double — its animated face and physical presence create companionship and accountability without requiring active input. Conversational AI runs through cloud APIs (Groq LLM, Whisper STT, Cartesia TTS); vision and hardware control stay local.
+Instead of putting another productivity app on a screen, Curie brings the interaction into the physical world.
 
-Why Arduino UNO Q?
+It can talk, listen, move, react, remember, guide tasks, run focus sessions, and respond to what is happening around the user.
 
-Curie’s architecture demands two things at once: real-time hardware control at millisecond granularity for servo animation, touch response, and OLED rendering — and a full Linux environment capable of running Python, driving a USB camera, and calling cloud APIs. The Arduino UNO Q is uniquely built for this. It houses a Qualcomm QRB2210 quad-core Cortex-A53 at 2 GHz running Debian Linux, paired with an STM32U585 Cortex-M33 MCU at 160 MHz running Zephyr RTOS, connected through an internal bridge. The Linux side runs the entire application layer — LLM integration, speech-to-text, text-to-speech, the web dashboard, and the SQLite memory database. The MCU side handles the latency-sensitive hardware loop: the RoboEyes animation state machine, servo kinematics with eased interpolation, touch polling, and the OLED frame buffer, all at consistent frame rates without being interrupted by the heavier AI workloads. The onboard dual ISP and GPU handle the camera-based person and phone detection entirely on-device, so no video frames leave the board — this was a privacy-first choice, since Curie is watching you at your desk all day. Conversational AI, on the other hand, goes to Groq’s cloud inference because the quality of dialogue, emotion-tagged responses, and task decomposition that an ADHD user benefits from requires a large language model far beyond what the QRB2210’s CPU/GPU can run at usable speed. We accepted this cloud dependency as a reasonable trade-off: the sensitive data (video) stays local, and the non-sensitive data (text queries) goes to the cloud for quality. Built-in Wi-Fi and Bluetooth mean no additional networking hardware, and the UNO form factor keeps the footprint small enough to sit on a desk without feeling like a development board 
+> **Curie is not a medical device and is not intended to diagnose, treat, or cure ADHD.**
+> It is an experimental assistive technology project designed to reduce friction around everyday tasks and focus.
 
-<img width="441" height="328" alt="image" src="https://github.com/user-attachments/assets/689e49b6-e9f5-4f45-bdcc-da5daa19f517" />
-
-<img width="433" height="321" alt="image" src="https://github.com/user-attachments/assets/6d9a9902-96fd-45f9-9ea0-83ba21f1e0af" />
-
-<img width="412" height="307" alt="image" src="https://github.com/user-attachments/assets/cfb95e68-4168-4ba9-ac88-a94e3648266f" />
-
-<img width="415" height="306" alt="image" src="https://github.com/user-attachments/assets/66f28f05-983f-4c97-8d08-43c047b9a778" />
+<img width="8192" height="6144" alt="IMG_20260823_224452321" src="https://github.com/user-attachments/assets/54ac7508-e85a-4e76-ae1b-8c09528d0868" />
 
 
-2. Components Used (BOM)
+---
 
-   
-Arduino UNO Q (ABX00087) 1
-USB-A Webcam with Built-in Microphone 1
-Wired Speaker 1
-0.96” SSD1306 OLED Display (128×64, I2C) 1
-MG90S Servo Motor 1
-TTP223 Capacitive Touch Sensor Module 2
-USB-C Hub (with PD passthrough) 1
-USB-C Cable (PD power to hub) 1
-USB-A Cable (stripped, 5V to servo from hub) 1
-PLA Filament (3D-printed enclosure) 1
-Jumper Wires
+## ✨ What is Curie?
 
-3. System Architecture & Circuit
+Curie is built around a simple idea:
+
+**When starting a task is difficult, the solution shouldn't always be another notification, app, or productivity dashboard.**
+
+Curie sits on the user's desk and acts as a persistent physical companion.
+
+Rather than demanding attention, it is designed to provide small, low-friction interventions:
+
+* Help break an overwhelming task into tiny first steps
+* Start and manage focus sessions
+* Provide gentle reminders
+* Detect when the user has moved away from their workspace
+* Detect potential phone/distraction activity
+* Respond to voice commands
+* Remember useful user information
+* Provide a physical, expressive presence through its OLED face
+* React through head movement, expressions, sound, and speech
+* Provide breathing exercises
+* Track focus-session performance and streaks
+
+The goal is not to make the user "more productive" at all costs.
+
+The goal is to **make starting and returning to a task easier.**
+
+---
+
+## 🧠 Designed around ADHD / Executive Dysfunction
+
+Curie's interaction model is intentionally different from conventional productivity software.
+
+Instead of:
+
+> "You haven't completed your task."
+
+Curie tries to reduce the barrier to starting:
+
+> "Let's figure out the first tiny thing you need to do."
+
+Its task-breakdown system is designed to turn an overwhelming task into **3–5 small, concrete first steps**.
+
+Curie's AI personality is also deliberately designed not to shame the user for losing focus. The system prompt explicitly describes Curie as a calm support companion rather than a mascot or hype bot.
+
+---
+
+# 🤖 Features
+
+## Voice Interaction
+
+Curie can listen to the user through a microphone and respond using speech.
+
+The software uses Groq's API for speech transcription and language-model interaction. The current implementation uses Whisper for audio transcription and Groq's OpenAI-compatible chat API for the AI layer.
+
+API credentials are supplied by the user rather than hard-coded into the project.
+
+---
+
+## 📝 Task Breakdown
+
+When the user is struggling to start something, Curie can turn the task into several extremely small actions.
+
+For example:
+
+**User:**
+
+> "I need to finish my physics assignment."
+
+**Curie:**
+
+1. Open the assignment
+2. Find the first unanswered question
+3. Write down what the question is asking
+4. Solve only that question
+
+This is intended to reduce the activation energy required to begin.
+
+---
+
+## 🧠 Memory
+
+Curie maintains a local SQLite database for:
+
+* Recent conversation history
+* User facts
+* Daily focus statistics
+* Brain-dump items
+
+The database uses SQLite with WAL mode and locking to handle concurrent access.
+
+Curie also includes a dedicated mechanism for clearing long-term user facts while preserving other information such as habits, streaks, trends, notes, and chat history.
+
+---
+
+## 📌 Brain Dump
+
+Users can tell Curie about something they need to remember without creating a formal reminder.
+
+Curie can store the item as a brain-dump note and retrieve the list later.
+
+This is intended for the small thoughts that frequently interrupt a task:
+
+> "I need to email my professor later."
+
+Instead of switching apps and breaking focus, the user can simply tell Curie.
+
+---
+
+## ⏱️ Pomodoro / Focus Sessions
+
+Curie includes an integrated focus timer with:
+
+* Work sessions
+* Break sessions
+* Pause / resume
+* Focus scoring
+* Session statistics
+* Streak tracking
+* OLED timer animations
+* Session-completion feedback
+
+The physical OLED can display the focus state and final session score, including a small confetti animation after completion.
+
+---
+
+## 🌬️ Breathing Exercise
+
+Curie can guide the user through a timed breathing exercise.
+
+The physical OLED transitions into a dedicated breathing interface and displays the remaining time.
+
+---
+
+## 👁️ Computer Vision
+
+Curie uses the Arduino UNO Q's vision capabilities to detect objects in its environment.
+
+The current software uses the Arduino `VideoObjectDetection` brick and processes detections for things such as:
+
+* People
+* Phones
+* Mobile devices
+* Other detected objects
+
+The vision system maintains presence and phone-detection state, which can then be used by Curie's focus logic.
+
+---
+
+## 📱 Distraction Awareness
+
+During a focus session, Curie can use vision information to track potential phone activity and whether the user is present.
+
+This allows Curie to provide feedback without requiring the user to manually report that they became distracted.
+
+The intention is not surveillance or punishment — the system is designed around gentle intervention and returning to the task.
+
+---
+
+## 👀 Expressive OLED Face
+
+Curie's physical face is a 128×64 OLED display.
+
+The Arduino firmware uses expressive eyes and multiple animation states to communicate Curie's state.
+
+The OLED supports states including:
+
+* Normal expressions
+* Sleep
+* Wake/startle
+* Listening
+* Processing
+* Pomodoro
+* Breathing
+* Notifications
+* Session scores
+* Confetti
+* Boot animation
+
+The boot animation itself expands a ring and then spells out **CURIE** across the display.
+
+---
+
+## 🦾 Physical Movement
+
+Curie's head currently uses a single pan axis.
+
+The Arduino firmware controls the servo with interpolated movement rather than simply jumping between positions. The current implementation constrains the pan movement to approximately 45°–135°.
+Curie can:
+
+* Look left/right/up/down through coordinated eye and head behavior
+* React to sound
+* Look toward the user
+* Move during conversations
+* React to interactions
+* Dance
+* Startle/wake
+* Perform idle movements
+
+---
+
+## 🫳 Physical Interaction
+
+Curie includes touch inputs for physical interaction.
+
+The current firmware defines separate touch inputs for:
+
+* Petting
+* Speaking / interaction
+
+These inputs can trigger different behavioral responses from Curie.
+
+---
+
+# 🖥️ Web Interface
+
+<img width="1600" height="1200" alt="WhatsApp Image 2026-08-23 at 11 25 05 PM (2)" src="https://github.com/user-attachments/assets/a1304bb8-2518-46bd-9a6e-63e95e5ea32b" />
 
 
-Step-by-Step Workflow
+Curie also has a browser-based interface for controlling and monitoring the robot.
 
-Idle State (always running when no session is active): USB-A webcam continuously captures frames → UNO Q Linux side runs on-device object detection (person/phone classification) at ~1 Hz → Python tracks whether the user is at their desk and for how long. The MCU simultaneously runs the RoboEyes idle animation loop (periodic blinking, random eye wandering), polls both TTP223 touch sensors, and renders the SSD1306 OLED at ~30 fps. Meanwhile, background threads handle proactive behaviours: a sedentary monitor tracks how long the user has been seated and queues a movement nudge after 60 minutes or a hydration/stretch nudge after 90; a clock thread checks for late-night usage (past midnight) and sends a once-per-night sleep encouragement; a weekly summary thread fires on Sunday evenings, pulls 7-day stats from SQLite, sends them to the LLM for a coached recap, and delivers it as spoken audio. The LLM’s mood analysis of recent conversation can also trigger a breathing exercise suggestion — if the user’s last few messages indicate stress or overwhelm, Curie offers to guide a timed box-breathing session with synchronised head movement and OLED animation. On boot or morning reactivation, Curie can deliver a contextual debrief weaving together the day’s calendar events and weather.
-Focus Session (started via voice or web dashboard): Python starts a Pomodoro timer and enters gamification mode → on each detection cycle, the vision pipeline checks for person presence and phone visibility → if the person is absent for 15+ seconds, Python sends a pause command to the MCU via Bridge RPC, the timer halts, and Curie’s eyes shift to a tired expression → when the person returns for 5+ seconds, the timer auto-resumes and eyes return to normal → if a phone is detected during a session, Python increments the pickup counter, the MCU eyes show a sweat-drop animation, and a verbal nudge is queued → a live focus score (100 − pickups×5 − AFK×2, floored at 20%) is computed each cycle and reflected in the OLED eye mood (happy ≥80%, neutral 50–79%, sweating <50%) → at session end, the score is logged to SQLite, a completion chime plays, the OLED displays the final percentage with a confetti particle animation, and the MCU reports the result back to Python for streak tracking and goal-setting.
-Voice Conversation & Contextual Interventions: When the user holds the speak sensor, the MCU signals Python via Bridge → Python records from the USB microphone via arecord (16 kHz mono) → on release, audio is uploaded to Groq Whisper for transcription → the transcript is injected into the LLM conversation context (last 4 messages from SQLite + long-term user facts + system prompt + upcoming calendar events) and sent to Groq → the LLM returns mood-tagged text with action tags (e.g. [HAPPY] Great work! [BREAKDOWN: step1 | step2 | step3]) → Python parses these: emotion tags drive MCU facial expressions, action tags execute locally, and the spoken text is sent to Cartesia for TTS → the resulting PCM audio plays through the wired speaker via ALSA while the MCU keeps expressions synchronised to the current mood tag → tapping the speak sensor during playback interrupts speech immediately. Through this same pipeline, the LLM can recognise signs of task paralysis in the user’s language and proactively offer to decompose the task into three to five micro-steps, capture stray thoughts as persistent brain-dump notes in SQLite, set Google Calendar reminders via the [REMIND] tag, or recall what the user was last working on via [RECALL].
+The interface includes a digital representation of Curie's face and controls for its different activities.
 
-**Wiring: **
+The interface currently includes functionality for:
 
-TTP223 Touch Sensor (Pet) D2
-TTP223 Touch Sensor (Speak) D3
-MG90S Pan Servo D5 (PWM)
-SSD1306 OLED (128×64) SDA / SCL (I2C)
-USB-A Webcam (with mic) USB A port
-Wired Speaker USB A + aux (3.5mm) port
+* Chat
+* Focus sessions
+* Pomodoro controls
+* Breathing exercises
+* Habits
+* Weekly trends
+* Memory
+* Settings
+* Curie actions
+* Camera status
+* Hibernation
+* Digital twin
 
-<img width="685" height="500" alt="image" src="https://github.com/user-attachments/assets/109e3746-3e93-47e1-84f5-204f606c8257" />
+The web interface also provides habit statistics such as Pomodoro score, phone pickups, and AFK events.
 
-<img width="833" height="440" alt="image" src="https://github.com/user-attachments/assets/d16dcbb8-fee7-43f7-a20f-5e6387af1af1" />
+---
+
+# 🔧 Hardware
+
+<img width="1354" height="1037" alt="curie breadboard schematic" src="https://github.com/user-attachments/assets/c607cc34-1da2-49ce-82e8-fe965468ceed" />
+
+
+Curie is built around the **Arduino UNO Q** platform.
+
+### Main hardware
+
+| Component          | Purpose                       |
+| ------------------ | ----------------------------- |
+| Arduino UNO Q      | Main computing platform       |
+| 128×64 I²C OLED    | Physical face                 |
+| Servo motor        | Head pan movement             |
+| Microphone         | Voice input                   |
+| Speaker            | Voice/audio output            |
+| Camera             | Presence and object detection |
+| Touch sensors      | Physical interaction          |
+| 3D-printed body    | Mechanical enclosure          |
+| Custom electronics | Power and signal distribution |
+
+See [`hardware/`](hardware/) for the CAD files, schematic, and hardware documentation.
+
+---
+
+# 🔌 System Architecture
+
+At a high level, Curie is split into two cooperating systems:
+
+```text
+                    ┌─────────────────────┐
+                    │      CURIE USER     │
+                    └──────────┬──────────┘
+                               │
+                 Voice / Touch / Presence
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │    Arduino UNO Q    │
+                    │                     │
+                    │   Curie AI / App    │
+                    │                     │
+                    │  ┌───────────────┐  │
+                    │  │ Voice + LLM   │  │
+                    │  │ Memory        │  │
+                    │  │ Vision        │  │
+                    │  │ Focus System  │  │
+                    │  └───────────────┘  │
+                    └───────┬─────┬───────┘
+                            │     │
+                 RouterBridge     │
+                            │     │
+              ┌─────────────┘     └──────────────┐
+              ▼                                  ▼
+       ┌─────────────┐                    ┌─────────────┐
+       │ Arduino MCU │                    │ Web UI      │
+       │             │                    │             │
+       │ OLED        │                    │ Digital     │
+       │ Servo       │                    │ Twin        │
+       │ Touch       │                    │ Controls    │
+       └─────────────┘                    └─────────────┘
+```
+
+The Arduino-side firmware communicates with the application layer through Arduino RouterBridge.
+
+---
+
+# 📁 Repository Structure
+
+```text
+Curie/
+│
+├── README.md
+├── LICENSE
+├── .gitignore
+│
+├── docs/
+│   ├── schematic.png
+│   ├── architecture.png
+│   └── images/
+│
+├── hardware/
+│   ├── CAD/
+│   │   ├── STEP/
+│   │   ├── STL/
+│   │   └── source/
+│   └── BOM.md
+│
+├── software/
+│   ├── curie-app/
+│   │   ├── main.py
+│   │   ├── index.html
+│   │   └── ...
+│   │
+│   └── arduino/
+│       ├── sketch.ino
+│       ├── oled_driver.h
+│       └── ...
+│
+├── media/
+│   ├── demo.gif
+│   └── screenshots/
+│
+└── releases/
+    └── curie-app.zip
+```
+
+---
+
+# 🚀 Getting Started
+
+## Hardware
+
+1. Assemble the Curie body using the provided CAD files.
+2. Wire the electronics according to the schematic in [`docs/schematic.png`](docs/schematic.png).
+3. Connect the OLED, servo, touch sensors, microphone, speaker, and camera.
+4. Install the required Arduino libraries.
+5. Upload the Arduino firmware.
+
+## Software
+
+The Curie application runs on the Arduino UNO Q environment.
+
+The application requires API credentials for external AI services used by the current implementation.
+
+At minimum, configure:
+
+```text
+Groq API Key
+Cartesia API Key
+Cartesia Voice ID
+```
+
+Additional configuration includes:
+
+```text
+Location
+Timezone
+Language
+Calendar configuration
+```
+
+**Do not commit API keys to GitHub.**
+
+Use environment variables, a local configuration file excluded by `.gitignore`, or the application's settings mechanism.
+
+---
+
+# ⚠️ Current Status
+
+Curie is an **active experimental project**.
+
+The hardware, firmware, software, and interaction model are still being developed.
+
+Some features may require specific Arduino UNO Q software versions, libraries, peripherals, or API services.
+
+Expect things to change.
+
+---
+
+# 🛠️ Development
+
+Curie consists of three major layers:
+
+### Application Layer
+
+Python application responsible for:
+
+* AI interaction
+* Voice
+* Memory
+* Vision
+* Focus logic
+* Statistics
+* Web UI communication
+* User context
+
+### Interface Layer
+
+HTML/CSS/JavaScript web interface providing:
+
+* Digital twin
+* Controls
+* Statistics
+* Settings
+* Focus tools
+
+### Hardware Layer
+
+Arduino firmware responsible for:
+
+* OLED rendering
+* Eye animations
+* Servo movement
+* Touch interaction
+* Physical reactions
+* Hardware state
+
+---
+
+# 🤝 Contributing
+
+Curie is intended to be an open hardware/software project.
+
+Ideas, improvements, hardware modifications, interaction designs, and accessibility improvements are welcome.
+
+If you build your own Curie or modify the design, I'd love to see it.
+
+---
+
+# 📜 License
+
+This project is currently released under the terms of the license included in this repository.
+
+See [`LICENSE`](LICENSE) for details.
+
+---
+
+# ❤️ Why Curie?
+
+Productivity software usually asks the user to manage the tool.
+
+Curie tries to do the opposite.
+
+It sits beside you.
+
+It notices.
+
+It remembers.
+
+It helps you start.
+
+And when you get distracted, it doesn't tell you that you failed.
+
+It just helps you come back.
+
+**Curie is a physical interface between a person and the task they are trying to do.**
