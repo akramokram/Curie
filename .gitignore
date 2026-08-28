@@ -1,0 +1,151 @@
+# =========================
+
+# Curie - Git Ignore
+
+# =========================
+
+# ---------- Python ----------
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+
+.venv/
+venv/
+env/
+ENV/
+
+# Python tooling
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- Secrets / Configuration ----------
+
+.env
+.env.*
+!.env.example
+
+# Local configuration files
+
+config.local.*
+secrets.*
+credentials.*
+*_secret.*
+*_credentials.*
+
+# ---------- Curie Runtime Data ----------
+
+# Local SQLite database containing Curie's memory, chat history,
+
+# user facts, habits, and brain-dump data.
+
+memory.db
+memory.db-*
+*.sqlite
+*.sqlite3
+
+# Logs
+
+*.log
+logs/
+
+# ---------- Temporary / Generated Files ----------
+
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Audio generated during runtime
+
+*.wav
+*.mp3
+*.ogg
+
+# ---------- Arduino ----------
+
+# Arduino IDE build output
+
+build/
+*.elf
+*.hex
+*.bin
+*.eep
+*.map
+
+# Arduino temporary files
+
+arduino_build_*/
+arduino_cache_*/
+
+# ---------- VS Code ----------
+
+.vscode/
+!.vscode/extensions.json
+
+# ---------- Platform / OS ----------
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Windows thumbnails
+
+ehthumbs.db
+
+# ---------- Archives ----------
+
+# Ignore exported archives unless deliberately placed
+
+# in the releases directory.
+
+*.zip
+*.tar
+*.tar.gz
+
+!releases/*.zip
+
+# ---------- CAD ----------
+
+# Temporary CAD files
+
+*.bak
+*.tmp
+*.lock
+*.lck
+
+# CAD autosave / recovery
+
+~$*
+*.autosave
+
+# ---------- Personal / Local Files ----------
+
+notes_private/
+private/
+local/
+
+````
+
+**One important thing:** don't put `memory.db` on GitHub. Your code explicitly stores chat history and user facts in that SQLite database, so it could contain personal information.
+
+And definitely don't commit API keys. Your current `main.py` has configuration fields for the Groq and Cartesia credentials, so I'd make sure the actual keys are blank before uploading the code.
+
+For the repo, I'd also add a tiny **`.env.example`** showing what someone needs to configure without containing your actual keys:
+
+```text
+GROQ_API_KEY=
+CARTESIA_API_KEY=
+CARTESIA_VOICE_ID=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REFRESH_TOKEN=
+````
+
+That way someone cloning Curie immediately knows what credentials they need, without you accidentally publishing yours.
